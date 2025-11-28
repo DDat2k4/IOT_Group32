@@ -2,12 +2,9 @@ package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.web.config.MqttSSLConfig;
-import org.example.web.data.MqttMessageDTO;
-import org.example.web.data.entity.Alert;
+import org.example.web.data.pojo.MqttMessageDTO;
 import org.example.web.service.AlertService;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

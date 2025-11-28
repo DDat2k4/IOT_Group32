@@ -2,7 +2,7 @@ package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.web.config.MqttSSLConfig;
-import org.example.web.data.MqttMessageDTO;
+import org.example.web.data.pojo.MqttMessageDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

@@ -20,12 +20,12 @@ public class UserAccount {
     private String username;
 
     @Column(nullable = false, length = 255)
-    private String password;   // BCrypt
+    private String password;
 
     private String fullName;
 
     @Column(length = 50)
-    private String role;       // ADMIN / SECURITY / USER
+    private String role;       // ADMIN / USER
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();

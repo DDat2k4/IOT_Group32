@@ -1,4 +1,4 @@
-package org.example.web.data;
+package org.example.web.data.pojo;
 
 import lombok.Data;
 
