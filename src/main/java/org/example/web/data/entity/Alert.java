@@ -29,6 +29,7 @@ public class Alert {
     private String alertType;     // FIRE / SMOKE / GAS / TEMP_HIGH...
 
     private Float value;
+
     private Float threshold;
 
     private String topic;

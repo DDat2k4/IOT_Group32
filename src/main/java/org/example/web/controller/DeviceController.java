@@ -2,6 +2,8 @@ package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.web.data.entity.Device;
+import org.example.web.data.response.DeviceResponse;
+import org.example.web.mapper.DeviceMapper;
 import org.example.web.service.DeviceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,53 +18,58 @@ public class DeviceController {
     private final DeviceService deviceService;
 
     @PostMapping
-    public ResponseEntity<Device> createDevice(@RequestBody Device device) {
+    public ResponseEntity<DeviceResponse> createDevice(@RequestBody Device device) {
         Device saved = deviceService.save(device);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(DeviceMapper.toResponse(saved));
     }
 
     @GetMapping
-    public ResponseEntity<List<Device>> getAllDevices() {
-        return ResponseEntity.ok(deviceService.findAll());
+    public ResponseEntity<List<DeviceResponse>> getAllDevices() {
+        List<DeviceResponse> list = deviceService.findAll()
+                .stream()
+                .map(DeviceMapper::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(list);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Device> getDeviceById(@PathVariable Long id) {
+    public ResponseEntity<DeviceResponse> getDeviceById(@PathVariable Long id) {
         return deviceService.findById(id)
-                .map(ResponseEntity::ok)
+                .map(device -> ResponseEntity.ok(DeviceMapper.toResponse(device)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/code/{deviceCode}")
-    public ResponseEntity<Device> getByDeviceCode(@PathVariable String deviceCode) {
+    public ResponseEntity<DeviceResponse> getByDeviceCode(@PathVariable String deviceCode) {
         Device device = deviceService.findByDeviceCode(deviceCode);
         if (device == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(device);
+        return ResponseEntity.ok(DeviceMapper.toResponse(device));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Device> updateDevice(
+    public ResponseEntity<DeviceResponse> updateDevice(
             @PathVariable Long id,
             @RequestBody Device updated
     ) {
         try {
             Device device = deviceService.updateDevice(id, updated);
-            return ResponseEntity.ok(device);
+            return ResponseEntity.ok(DeviceMapper.toResponse(device));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @PatchMapping("/{deviceCode}/status")
-    public ResponseEntity<Device> updateStatus(
+    public ResponseEntity<DeviceResponse> updateStatus(
             @PathVariable String deviceCode,
             @RequestParam String status
     ) {
         try {
             Device updated = deviceService.updateStatus(deviceCode, status);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(DeviceMapper.toResponse(updated));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -78,4 +85,3 @@ public class DeviceController {
         }
     }
 }
-

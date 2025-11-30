@@ -2,6 +2,8 @@ package org.example.web.data.response;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class DeviceResponse {
     private Long id;
@@ -9,5 +11,5 @@ public class DeviceResponse {
     private String name;
     private String location;
     private String status;
+    private List<SensorResponse> sensors;
 }
-

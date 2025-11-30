@@ -27,7 +27,7 @@ public class Sensor {
     private String sensorType;    // MQ2, FLAME, DHT11...
 
     private String name;
-    private String unit;         // ppm, °C, %, boolean...
+    private String unit;         // ppm, °C, %
 
     private Float minValue;
     private Float maxValue;

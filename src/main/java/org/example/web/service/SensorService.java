@@ -5,6 +5,7 @@ import org.example.web.data.entity.Device;
 import org.example.web.data.entity.Sensor;
 import org.example.web.data.request.SensorRequest;
 import org.example.web.data.response.SensorResponse;
+import org.example.web.mapper.SensorMapper;
 import org.example.web.repository.DeviceRepository;
 import org.example.web.repository.SensorRepository;
 import org.springframework.stereotype.Service;
@@ -18,61 +19,58 @@ public class SensorService {
     private final SensorRepository sensorRepository;
     private final DeviceRepository deviceRepository;
 
-    public SensorResponse createSensor(Long deviceId, SensorRequest request) {
+    public SensorResponse createSensor(Long deviceId, SensorRequest req) {
         Device device = deviceRepository.findById(deviceId)
                 .orElseThrow(() -> new RuntimeException("Device not found"));
 
-        Sensor s = new Sensor();
-        s.setDevice(device);
-        s.setSensorType(request.getSensorType());
-        s.setName(request.getName());
-        s.setUnit(request.getUnit());
-        s.setMinValue(request.getMinValue());
-        s.setMaxValue(request.getMaxValue());
-        s.setStatus("ACTIVE");
+        if (sensorRepository.existsByDeviceIdAndSensorType(deviceId, req.getSensorType())) {
+            throw new RuntimeException("Sensor type already exists in this device");
+        }
 
-        sensorRepository.save(s);
-        return toResponse(s);
+        Sensor s = Sensor.builder()
+                .device(device)
+                .sensorType(req.getSensorType())
+                .name(req.getName())
+                .unit(req.getUnit())
+                .minValue(req.getMinValue())
+                .maxValue(req.getMaxValue())
+                .status(req.getStatus() != null ? req.getStatus() : "ACTIVE")
+                .build();
+
+        return SensorMapper.toResponse(sensorRepository.save(s));
     }
 
     public List<SensorResponse> getByDevice(Long deviceId) {
         return sensorRepository.findByDeviceId(deviceId)
                 .stream()
-                .map(this::toResponse)
+                .map(SensorMapper::toResponse)
                 .toList();
     }
 
-    public SensorResponse update(Long id, SensorRequest request) {
+    public SensorResponse update(Long id, SensorRequest req) {
         Sensor s = sensorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sensor not found"));
 
-        s.setName(request.getName());
-        s.setUnit(request.getUnit());
-        s.setMinValue(request.getMinValue());
-        s.setMaxValue(request.getMaxValue());
+        // Update fields
+        s.setSensorType(req.getSensorType());
+        s.setName(req.getName());
+        s.setUnit(req.getUnit());
+        s.setMinValue(req.getMinValue());
+        s.setMaxValue(req.getMaxValue());
+        s.setStatus(req.getStatus());
 
-        sensorRepository.save(s);
-        return toResponse(s);
+        return SensorMapper.toResponse(sensorRepository.save(s));
     }
 
     public void delete(Long id) {
+        if (!sensorRepository.existsById(id)) {
+            throw new RuntimeException("Sensor not found");
+        }
         sensorRepository.deleteById(id);
     }
 
-    private SensorResponse toResponse(Sensor s) {
-        SensorResponse r = new SensorResponse();
-        r.setId(s.getId());
-        r.setSensorType(s.getSensorType());
-        r.setName(s.getName());
-        r.setUnit(s.getUnit());
-        r.setMinValue(s.getMinValue());
-        r.setMaxValue(s.getMaxValue());
-        r.setStatus(s.getStatus());
-        return r;
-    }
-
-    // Lấy sensor theo device + type
     public Sensor findByDeviceAndType(Long deviceId, String sensorType) {
-        return sensorRepository.findByDeviceIdAndSensorType(deviceId, sensorType).orElse(null);
+        return sensorRepository.findByDeviceIdAndSensorType(deviceId, sensorType)
+                .orElse(null);
     }
 }

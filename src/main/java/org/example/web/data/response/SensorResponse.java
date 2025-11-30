@@ -11,5 +11,6 @@ public class SensorResponse {
     private Float minValue;
     private Float maxValue;
     private String status;
+    private Long deviceId;
 }
 

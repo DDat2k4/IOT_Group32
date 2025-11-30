@@ -9,5 +9,6 @@ public class SensorRequest {
     private String unit;
     private Float minValue;
     private Float maxValue;
+    private String status;
 }
 

@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface SensorRepository extends JpaRepository<Sensor, Long> {
     List<Sensor> findByDeviceId(Long deviceId);
-
+    boolean existsByDeviceIdAndSensorType(Long deviceId, String sensorType);
     // Tìm sensor theo deviceId và sensorType
     Optional<Sensor> findByDeviceIdAndSensorType(Long deviceId, String sensorType);
 }
