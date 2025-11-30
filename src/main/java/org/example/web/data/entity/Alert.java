@@ -25,6 +25,10 @@ public class Alert {
     @JoinColumn(name = "sensor_id")
     private Sensor sensor;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private UserAccount user;
+
     @Column(length = 50)
     private String alertType;     // FIRE / SMOKE / GAS / TEMP_HIGH...
 

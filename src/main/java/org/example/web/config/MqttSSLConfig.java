@@ -1,16 +1,15 @@
 package org.example.web.config;
 
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.example.web.data.entity.Alert;
-import org.example.web.data.entity.Device;
-import org.example.web.data.entity.MessageLog;
-import org.example.web.data.entity.Sensor;
+import org.example.web.data.entity.*;
 import org.example.web.service.AlertService;
 import org.example.web.service.DeviceService;
 import org.example.web.service.MessageLogService;
 import org.example.web.service.SensorService;
+import org.example.web.service.mail.MailService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,27 +24,24 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.cert.CertificateFactory;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class MqttSSLConfig {
 
     private static final Logger log = LoggerFactory.getLogger(MqttSSLConfig.class);
 
     @Value("${mqtt.server}")
     private String mqttServer;
-
     @Value("${mqtt.username}")
     private String username;
-
     @Value("${mqtt.password}")
     private String password;
-
     @Value("${mqtt.client-id}")
     private String clientId;
-
     @Value("${mqtt.topic}")
     private String topic;
-
     @Value("${mqtt.ca-file}")
     private Resource caFile;
 
@@ -55,35 +51,25 @@ public class MqttSSLConfig {
     private final DeviceService deviceService;
     private final SensorService sensorService;
     private final MessageLogService messageLogService;
-
-    public MqttSSLConfig(AlertService alertService, DeviceService deviceService,
-                         SensorService sensorService, MessageLogService messageLogService) {
-        this.alertService = alertService;
-        this.deviceService = deviceService;
-        this.sensorService = sensorService;
-        this.messageLogService = messageLogService;
-    }
+    private final MailService mailService;
 
     @PostConstruct
     public void init() throws Exception {
-
         // Load CA file
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
-
         try (InputStream caInput = caFile.getInputStream()) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             java.security.cert.Certificate ca = cf.generateCertificate(caInput);
             ks.setCertificateEntry("caCert", ca);
         }
-
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ks);
 
         SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
         sslContext.init(null, tmf.getTrustManagers(), null);
 
-        // MQTT Options
+        // MQTT connect
         MqttConnectOptions options = new MqttConnectOptions();
         options.setSocketFactory(sslContext.getSocketFactory());
         options.setUserName(username);
@@ -93,7 +79,6 @@ public class MqttSSLConfig {
 
         client = new MqttClient(mqttServer, clientId, new MemoryPersistence());
         client.connect(options);
-
         log.info("MQTT TLS Connected to EMQX!");
 
         // Subscribe topic
@@ -101,24 +86,23 @@ public class MqttSSLConfig {
             String payload = new String(msg.getPayload());
             log.info("Received message from topic {}: {}", t, payload);
 
-            // Lưu message log
             saveMessageLog(t, payload);
 
             try {
-                // Parse deviceCode từ topic, ví dụ topic = iot/fire/ESP32-001
                 String[] parts = t.split("/");
                 String deviceCode = parts.length > 2 ? parts[2] : null;
-
-                if (deviceCode != null) {
-                    Device device = deviceService.findByDeviceCode(deviceCode);
-                    if (device != null) {
-                        processPayload(device, t, payload);
-                    } else {
-                        log.warn("Device not found for code {}", deviceCode);
-                    }
-                } else {
+                if (deviceCode == null) {
                     log.warn("Cannot parse deviceCode from topic: {}", t);
+                    return;
                 }
+
+                Device device = deviceService.findByDeviceCode(deviceCode);
+                if (device == null) {
+                    log.warn("Device not found for deviceCode {}", deviceCode);
+                    return;
+                }
+
+                processPayload(device, t, payload);
 
             } catch (Exception e) {
                 log.error("Error processing MQTT message: {}", e.getMessage(), e);
@@ -132,43 +116,46 @@ public class MqttSSLConfig {
         Float value = obj.has("value") ? obj.getFloat("value") : null;
 
         if (sensorType == null || value == null) {
-            log.warn("Invalid payload, missing sensorType or value: {}", payload);
+            log.warn("Invalid payload: {}", payload);
             return;
         }
 
-        // Tìm sensor theo device và type
         Sensor sensor = sensorService.findByDeviceAndType(device.getId(), sensorType);
-
-        // Xác định alertType và ngưỡng
         Float threshold = sensor != null ? sensor.getMaxValue() : null;
         boolean isWarning = threshold != null && value > threshold;
 
         String alertType = sensorType;
-        if (sensorType.equalsIgnoreCase("MQ2")) alertType = "SMOKE";
-        else if (sensorType.equalsIgnoreCase("FLAME")) alertType = "FIRE";
-        else if (sensorType.equalsIgnoreCase("DHT11") && value > threshold) alertType = "TEMP_HIGH";
+        if ("MQ2".equalsIgnoreCase(sensorType)) alertType = "SMOKE";
+        else if ("FLAME".equalsIgnoreCase(sensorType)) alertType = "FIRE";
+        else if ("DHT11".equalsIgnoreCase(sensorType) && threshold != null && value > threshold) alertType = "TEMP_HIGH";
 
-        Alert alert = Alert.builder()
-                .device(device)
-                .sensor(sensor)
-                .alertType(alertType)
-                .value(value)
-                .threshold(threshold)
-                .topic(topic)
-                .payload(payload)
-                .createdAt(LocalDateTime.now())
-                .isWarning(isWarning)
-                .build();
-
-        logAlertAsync(alert);
+        // gửi alert cho tất cả user của device
+        List<UserAccount> users = deviceService.getUsersOfDevice(device.getId());
+        for (UserAccount user : users) {
+            Alert alert = Alert.builder()
+                    .device(device)
+                    .sensor(sensor)
+                    .user(user)
+                    .alertType(alertType)
+                    .value(value)
+                    .threshold(threshold)
+                    .topic(topic)
+                    .payload(payload)
+                    .createdAt(LocalDateTime.now())
+                    .isWarning(isWarning)
+                    .build();
+            logAlertAsync(alert);
+            mailService.sendAlertEmail(user.getEmail(), alert);
+        }
     }
 
     @Async
     public void logAlertAsync(Alert alert) {
         alertService.logAlert(alert);
-        log.info("Alert saved for device {} sensor {}",
+        log.info("Alert saved for device {} sensor {} user {}",
                 alert.getDevice().getDeviceCode(),
-                alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A");
+                alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A",
+                alert.getUser() != null ? alert.getUser().getUsername() : "N/A");
     }
 
     @Async
@@ -181,7 +168,6 @@ public class MqttSSLConfig {
         messageLogService.save(logEntry);
     }
 
-    // Publish message
     public void publish(String topic, String payload) throws MqttException {
         if (client != null && client.isConnected()) {
             MqttMessage message = new MqttMessage(payload.getBytes());

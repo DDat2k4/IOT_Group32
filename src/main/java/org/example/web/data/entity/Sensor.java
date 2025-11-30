@@ -20,7 +20,6 @@ public class Sensor {
     // nhiều sensor → 1 device
     @ManyToOne
     @JoinColumn(name = "device_id", nullable = false)
-    @JsonBackReference
     private Device device;
 
     @Column(nullable = false, length = 50)

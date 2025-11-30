@@ -1,8 +1,10 @@
 package org.example.web.data.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "user_account")
@@ -24,10 +26,16 @@ public class UserAccount {
 
     private String fullName;
 
+    @Column(unique = true, length = 100)
+    private String email;
+
     @Column(length = 50)
     private String role;       // ADMIN / USER
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @ManyToMany(mappedBy = "users")
+    private List<Device> devices;
 }
 
