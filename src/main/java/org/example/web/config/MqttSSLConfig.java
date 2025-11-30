@@ -55,6 +55,13 @@ public class MqttSSLConfig {
 
     @PostConstruct
     public void init() throws Exception {
+        // Clean up topic string
+        if (topic != null) {
+            topic = topic.replaceAll("^\"|\"$", "")    // loại bỏ dấu "
+                    .replaceAll("^'|'$", "")           // loại bỏ dấu '
+                    .trim();                                            // loại bỏ space thừa
+        }
+        log.info("Subscribing to topic '{}'", topic);
         // Load CA file
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
@@ -82,6 +89,7 @@ public class MqttSSLConfig {
         log.info("MQTT TLS Connected to EMQX!");
 
         // Subscribe topic
+        log.info("Subscribing to topic '{}'", topic);
         client.subscribe(topic, (t, msg) -> {
             String payload = new String(msg.getPayload());
             log.info("Received message from topic {}: {}", t, payload);
