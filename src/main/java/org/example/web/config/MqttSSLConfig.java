@@ -5,12 +5,18 @@ import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.example.web.data.entity.Alert;
 import org.example.web.data.entity.Device;
+import org.example.web.data.entity.MessageLog;
+import org.example.web.data.entity.Sensor;
 import org.example.web.service.AlertService;
 import org.example.web.service.DeviceService;
+import org.example.web.service.MessageLogService;
+import org.example.web.service.SensorService;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.SSLContext;
@@ -47,10 +53,15 @@ public class MqttSSLConfig {
 
     private final AlertService alertService;
     private final DeviceService deviceService;
+    private final SensorService sensorService;
+    private final MessageLogService messageLogService;
 
-    public MqttSSLConfig(AlertService alertService, DeviceService deviceService) {
+    public MqttSSLConfig(AlertService alertService, DeviceService deviceService,
+                         SensorService sensorService, MessageLogService messageLogService) {
         this.alertService = alertService;
         this.deviceService = deviceService;
+        this.sensorService = sensorService;
+        this.messageLogService = messageLogService;
     }
 
     @PostConstruct
@@ -90,30 +101,84 @@ public class MqttSSLConfig {
             String payload = new String(msg.getPayload());
             log.info("Received message from topic {}: {}", t, payload);
 
-            // Parse deviceCode từ topic, ví dụ topic = iot/fire/ESP32-001
-            String[] parts = t.split("/");
-            String deviceCode = parts.length > 2 ? parts[2] : null;
+            // Lưu message log
+            saveMessageLog(t, payload);
 
-            if (deviceCode != null) {
-                Device device = deviceService.findByDeviceCode(deviceCode);
-                if (device != null) {
-                    Alert alert = Alert.builder()
-                            .device(device)
-                            .topic(t)
-                            .payload(payload)
-                            .createdAt(LocalDateTime.now())
-                            .isWarning(true)
-                            .build();
+            try {
+                // Parse deviceCode từ topic, ví dụ topic = iot/fire/ESP32-001
+                String[] parts = t.split("/");
+                String deviceCode = parts.length > 2 ? parts[2] : null;
 
-                    alertService.saveAlert(alert);
-                    log.info("Alert saved for device {}", deviceCode);
+                if (deviceCode != null) {
+                    Device device = deviceService.findByDeviceCode(deviceCode);
+                    if (device != null) {
+                        processPayload(device, t, payload);
+                    } else {
+                        log.warn("Device not found for code {}", deviceCode);
+                    }
                 } else {
-                    log.warn("Device not found for code {}", deviceCode);
+                    log.warn("Cannot parse deviceCode from topic: {}", t);
                 }
-            } else {
-                log.warn("Cannot parse deviceCode from topic: {}", t);
+
+            } catch (Exception e) {
+                log.error("Error processing MQTT message: {}", e.getMessage(), e);
             }
         });
+    }
+
+    private void processPayload(Device device, String topic, String payload) {
+        JSONObject obj = new JSONObject(payload);
+        String sensorType = obj.optString("sensorType");
+        Float value = obj.has("value") ? obj.getFloat("value") : null;
+
+        if (sensorType == null || value == null) {
+            log.warn("Invalid payload, missing sensorType or value: {}", payload);
+            return;
+        }
+
+        // Tìm sensor theo device và type
+        Sensor sensor = sensorService.findByDeviceAndType(device.getId(), sensorType);
+
+        // Xác định alertType và ngưỡng
+        Float threshold = sensor != null ? sensor.getMaxValue() : null;
+        boolean isWarning = threshold != null && value > threshold;
+
+        String alertType = sensorType;
+        if (sensorType.equalsIgnoreCase("MQ2")) alertType = "SMOKE";
+        else if (sensorType.equalsIgnoreCase("FLAME")) alertType = "FIRE";
+        else if (sensorType.equalsIgnoreCase("DHT11") && value > threshold) alertType = "TEMP_HIGH";
+
+        Alert alert = Alert.builder()
+                .device(device)
+                .sensor(sensor)
+                .alertType(alertType)
+                .value(value)
+                .threshold(threshold)
+                .topic(topic)
+                .payload(payload)
+                .createdAt(LocalDateTime.now())
+                .isWarning(isWarning)
+                .build();
+
+        logAlertAsync(alert);
+    }
+
+    @Async
+    public void logAlertAsync(Alert alert) {
+        alertService.logAlert(alert);
+        log.info("Alert saved for device {} sensor {}",
+                alert.getDevice().getDeviceCode(),
+                alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A");
+    }
+
+    @Async
+    public void saveMessageLog(String topic, String payload) {
+        MessageLog logEntry = MessageLog.builder()
+                .topic(topic)
+                .payload(payload)
+                .receivedAt(LocalDateTime.now())
+                .build();
+        messageLogService.save(logEntry);
     }
 
     // Publish message

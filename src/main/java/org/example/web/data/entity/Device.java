@@ -1,5 +1,6 @@
 package org.example.web.data.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class Device {
 
     // 1 device → nhiều sensor
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
+    @JsonBackReference
     private List<Sensor> sensors;
 }
 
