@@ -153,7 +153,11 @@ public class MqttSSLConfig {
                     .isWarning(isWarning)
                     .build();
             logAlertAsync(alert);
-            mailService.sendAlertEmail(user.getEmail(), alert);
+
+            // Chỉ gửi email nếu cảnh báo
+            if (isWarning) {
+                mailService.sendAlertEmail(user.getEmail(), alert);
+            }
         }
     }
 
