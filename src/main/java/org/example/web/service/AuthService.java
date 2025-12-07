@@ -178,13 +178,16 @@ public class AuthService {
 
     public void resetPassword(String email, String otp, String newPassword) {
 
-        UserAccount user = userAccountRepository
-                .findByEmail(email)
+        UserAccount user = userAccountRepository.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("Email not found"));
 
         PasswordResetToken token = passwordResetTokenRepository
-                .findByUserIdAndOtp(user.getId(), otp)
-                .orElseThrow(() -> new BadCredentialsException("Invalid OTP"));
+                .findTopByUserIdOrderByExpireAtDesc(user.getId())
+                .orElseThrow(() -> new BadCredentialsException("OTP not found"));
+
+        if (!token.getOtp().equals(otp)) {
+            throw new BadCredentialsException("Invalid OTP");
+        }
 
         if (token.getExpireAt().isBefore(LocalDateTime.now())) {
             throw new BadCredentialsException("OTP expired");
@@ -194,12 +197,12 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userAccountRepository.save(user);
 
-        // Xóa OTP
+        // Xoá OTP sau khi dùng
         passwordResetTokenRepository.delete(token);
 
-        // logout all sessions
-        logoutAll(user.getId());
+        // Gửi email xác nhận
+        mailService.sendPasswordChangedNotification(email);
 
-        log.info("Password changed for email {}", email);
+        log.info("Password reset successful for {}", email);
     }
 }
