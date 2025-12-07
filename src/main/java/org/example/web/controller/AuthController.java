@@ -3,10 +3,7 @@ package org.example.web.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.web.data.pojo.AuthResponse;
-import org.example.web.data.request.LoginRequest;
-import org.example.web.data.request.RefreshTokenRequest;
-import org.example.web.data.request.ChangePasswordRequest;
-import org.example.web.data.request.RegisterRequest;
+import org.example.web.data.request.*;
 import org.example.web.service.AuthService;
 import org.example.web.data.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -81,4 +78,21 @@ public class AuthController {
             return ResponseEntity.status(400).body(ApiResponse.error("Old password incorrect"));
         }
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        authService.sendResetCode(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.ok("Reset code sent", null));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(
+                request.getEmail(),
+                request.getOtp(),
+                request.getNewPassword()
+        );
+        return ResponseEntity.ok(ApiResponse.ok("Password reset successfully", null));
+    }
+
 }

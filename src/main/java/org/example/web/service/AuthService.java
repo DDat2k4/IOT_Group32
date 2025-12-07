@@ -1,6 +1,9 @@
 package org.example.web.service;
 
+import org.example.web.data.entity.PasswordResetToken;
 import org.example.web.data.request.RegisterRequest;
+import org.example.web.repository.PasswordResetTokenRepository;
+import org.example.web.service.mail.MailService;
 import org.springframework.security.authentication.BadCredentialsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,8 @@ public class AuthService {
     private final UserRefreshTokenRepository userRefreshTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public AuthResponse login(String username, String rawPassword) {
         UserAccount user = userAccountRepository
@@ -150,5 +156,50 @@ public class AuthService {
                 .build();
 
         userRefreshTokenRepository.save(token);
+    }
+
+    public void sendResetCode(String email) {
+
+        UserAccount user = userAccountRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Email not found"));
+
+        String otp = String.valueOf(100000 + new Random().nextInt(900000));
+
+        PasswordResetToken token = PasswordResetToken.builder()
+                .userId(user.getId())
+                .otp(otp)
+                .expireAt(LocalDateTime.now().plusMinutes(10))
+                .build();
+
+        passwordResetTokenRepository.save(token);
+
+        mailService.sendResetOtp(email, otp);
+    }
+
+    public void resetPassword(String email, String otp, String newPassword) {
+
+        UserAccount user = userAccountRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Email not found"));
+
+        PasswordResetToken token = passwordResetTokenRepository
+                .findByUserIdAndOtp(user.getId(), otp)
+                .orElseThrow(() -> new BadCredentialsException("Invalid OTP"));
+
+        if (token.getExpireAt().isBefore(LocalDateTime.now())) {
+            throw new BadCredentialsException("OTP expired");
+        }
+
+        // Đổi mật khẩu
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userAccountRepository.save(user);
+
+        // Xóa OTP
+        passwordResetTokenRepository.delete(token);
+
+        // logout all sessions
+        logoutAll(user.getId());
+
+        log.info("Password changed for email {}", email);
     }
 }

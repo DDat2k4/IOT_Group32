@@ -43,12 +43,10 @@ public class MailService {
                 .atZone(ZoneId.systemDefault())
                 .withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
         StringBuilder sb = new StringBuilder();
         sb.append("<h3>Device Alert Notification</h3>");
         sb.append("<p><strong>Device:</strong> ").append(alert.getDevice().getDeviceCode()).append("</p>");
-        sb.append("<p><strong>Sensor:</strong> ").append(
-                alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A").append("</p>");
+        sb.append("<p><strong>Sensor:</strong> ").append(alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A").append("</p>");
         sb.append("<p><strong>Value:</strong> ").append(alert.getValue()).append("</p>");
         sb.append("<p><strong>Threshold:</strong> ").append(alert.getThreshold()).append("</p>");
         sb.append("<p><strong>Alert Type:</strong> ").append(alert.getAlertType()).append("</p>");
@@ -56,4 +54,47 @@ public class MailService {
         sb.append("<p><strong>Time:</strong> ").append(formattedTime).append("</p>");
         return sb.toString();
     }
+
+    @Async
+    public void sendResetOtp(String email, String otp) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setTo(email);
+            helper.setSubject("Password Reset OTP");
+
+            String content = "<h3>Your OTP Code</h3>"
+                    + "<p>Your password reset OTP is:</p>"
+                    + "<h2 style='color: blue'>" + otp + "</h2>"
+                    + "<p>This OTP will expire in 10 minutes.</p>";
+
+            helper.setText(content, true);
+            mailSender.send(message);
+
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Async
+    public void sendPasswordChangedNotification(String email) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setTo(email);
+            helper.setSubject("Your Password Has Been Changed");
+
+            String content = "<h3>Password Updated Successfully</h3>"
+                    + "<p>If you did not perform this action, please reset your password immediately.</p>";
+
+            helper.setText(content, true);
+            mailSender.send(message);
+
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
