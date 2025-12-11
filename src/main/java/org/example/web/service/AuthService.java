@@ -71,6 +71,7 @@ public class AuthService {
                 .fullName(request.getFullname())
                 .role("USER")
                 .email(request.getEmail())
+                .createdAt(LocalDateTime.now())
                 .build();
 
         userAccountRepository.save(user);
