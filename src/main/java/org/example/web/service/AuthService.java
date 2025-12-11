@@ -70,6 +70,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullname())
                 .role("USER")
+                .email(request.getEmail())
                 .build();
 
         userAccountRepository.save(user);
