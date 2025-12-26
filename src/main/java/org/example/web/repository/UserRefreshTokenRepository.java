@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface UserRefreshTokenRepository extends JpaRepository<UserRefreshToken, Long> {
 
-    // Lấy tất cả token theo userId (multi-device)
+    // Lấy tất cả token theo userId
     List<UserRefreshToken> findByUserId(Long userId);
 
     // Lấy token chính xác

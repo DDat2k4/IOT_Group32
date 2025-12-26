@@ -2,7 +2,7 @@ package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.web.data.pojo.AuthResponse;
+import org.example.web.data.response.AuthResponse;
 import org.example.web.data.request.*;
 import org.example.web.service.AuthService;
 import org.example.web.data.response.ApiResponse;

@@ -1,4 +1,5 @@
 package org.example.web.security;
+
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,16 +35,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
         String token = null;
 
-        // Lấy token từ header
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
         } else if (request.getCookies() != null) {
-            // Hoặc từ cookie
             Optional<Cookie> accessCookie = Arrays.stream(request.getCookies())
                     .filter(c -> COOKIE_NAME.equals(c.getName()))
                     .findFirst();
@@ -65,26 +65,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Nếu chưa có auth trong context thì mới set
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+
             UserAccount user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new BadCredentialsException("User not found"));
 
-            if (user != null && jwtService.validateToken(token, user.getUsername())) {
-                Claims claims = jwtService.parseClaims(token);
+            if (jwtService.validateToken(token, user.getUsername())) {
 
-                List<String> roles = claims.get("roles", List.class);
+                Claims claims = jwtService.parseClaims(token);
+                String role = claims.get("role", String.class);
                 List<String> perms = claims.get("permissions", List.class);
 
-                // Map roles & perms thành GrantedAuthority
                 Collection<GrantedAuthority> authorities = new ArrayList<>();
-                if (roles != null) {
-                    authorities.addAll(
-                            roles.stream()
-                                    .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
-                                    .collect(Collectors.toList())
-                    );
+
+                if (role != null) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
                 }
+
                 if (perms != null) {
                     authorities.addAll(
                             perms.stream()
@@ -100,11 +98,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         authorities
                 );
 
-                // Authentication dùng principal này
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        principal, null, principal.getAuthorities()
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                principal,
+                                null,
+                                principal.getAuthorities()
+                        );
+
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
                 );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

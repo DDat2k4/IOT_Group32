@@ -6,6 +6,8 @@ import org.example.web.data.entity.Device;
 import org.example.web.data.response.DeviceResponse;
 import org.example.web.mapper.DeviceMapper;
 import org.example.web.service.DeviceService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.example.web.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
@@ -84,4 +86,18 @@ public class DeviceController {
         deviceService.deleteDevice(id, userId);
         return ResponseEntity.noContent().build();
     }
+
+//    @GetMapping
+//    public ResponseEntity<Page<Device>> filter(
+//            @RequestParam(required = false) String deviceCode,
+//            @RequestParam(required = false) String name,
+//            @RequestParam(required = false) String location,
+//            @RequestParam(required = false) String status,
+//            @RequestParam(required = false) Long userId,
+//            Pageable pageable
+//    ) {
+//        return ResponseEntity.ok(deviceService.filter(
+//                deviceCode, name, location, status, userId, pageable
+//        ));
+//    }
 }

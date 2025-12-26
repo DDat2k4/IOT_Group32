@@ -133,7 +133,7 @@ public class MqttSSLConfig {
         boolean isWarning = threshold != null && value > threshold;
 
         String alertType = sensorType;
-        if ("MQ2".equalsIgnoreCase(sensorType)) alertType = "SMOKE";
+        if ("MQ2".equalsIgnoreCase(sensorType)) alertType = "GAS";
         else if ("FLAME".equalsIgnoreCase(sensorType)) alertType = "FIRE";
         else if ("DHT11".equalsIgnoreCase(sensorType) && threshold != null && value > threshold) alertType = "TEMP_HIGH";
 

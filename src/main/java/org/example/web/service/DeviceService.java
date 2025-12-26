@@ -5,11 +5,15 @@ import org.example.web.data.entity.Device;
 import org.example.web.data.entity.UserAccount;
 import org.example.web.repository.DeviceRepository;
 import org.example.web.repository.UserAccountRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -67,5 +71,65 @@ public class DeviceService {
     public List<UserAccount> getUsersOfDevice(Long deviceId) {
         Device device = deviceRepository.findByIdWithUsers(deviceId);
         return device.getUsers();
+    }
+
+    public Page<Device> filter(
+            String deviceCode,
+            String name,
+            String location,
+            String status,
+            Long userId,
+            Pageable pageable
+    ) {
+
+        List<Specification<Device>> specs = new ArrayList<>();
+
+        if (deviceCode != null && !deviceCode.isBlank()) {
+            specs.add((root, query, cb) ->
+                    cb.like(
+                            cb.lower(root.get("deviceCode")),
+                            "%" + deviceCode.toLowerCase() + "%"
+                    )
+            );
+        }
+
+        if (name != null && !name.isBlank()) {
+            specs.add((root, query, cb) ->
+                    cb.like(
+                            cb.lower(root.get("name")),
+                            "%" + name.toLowerCase() + "%"
+                    )
+            );
+        }
+
+        if (location != null && !location.isBlank()) {
+            specs.add((root, query, cb) ->
+                    cb.like(
+                            cb.lower(root.get("location")),
+                            "%" + location.toLowerCase() + "%"
+                    )
+            );
+        }
+
+        if (status != null && !status.isBlank()) {
+            specs.add((root, query, cb) ->
+                    cb.equal(root.get("status"), status)
+            );
+        }
+
+        if (userId != null) {
+            specs.add((root, query, cb) -> {
+                query.distinct(true);
+                return cb.equal(
+                        root.join("users").get("id"),
+                        userId
+                );
+            });
+        }
+
+        Specification<Device> specification =
+                Specification.allOf(specs);
+
+        return deviceRepository.findAll(specification, pageable);
     }
 }

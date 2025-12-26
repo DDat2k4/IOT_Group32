@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.web.data.entity.UserAccount;
 import org.example.web.data.entity.UserRefreshToken;
-import org.example.web.data.pojo.AuthResponse;
+import org.example.web.data.response.AuthResponse;
 import org.example.web.repository.UserAccountRepository;
 import org.example.web.repository.UserRefreshTokenRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -62,6 +62,10 @@ public class AuthService {
         // Kiểm tra username đã tồn tại chưa
         if (userAccountRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new BadCredentialsException("Username already exists");
+        }
+
+        if (userAccountRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new BadCredentialsException("Email already exists");
         }
 
         // Tạo user mới

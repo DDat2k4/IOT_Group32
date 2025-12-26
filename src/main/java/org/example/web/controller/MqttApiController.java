@@ -18,4 +18,3 @@ public class MqttApiController {
         return "Message sent to topic: " + dto.getTopic();
     }
 }
-

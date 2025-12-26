@@ -1,5 +1,6 @@
 package org.example.web.data.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,7 +9,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "user_account")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,6 +38,7 @@ public class UserAccount {
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @ManyToMany(mappedBy = "users")
+    @JsonIgnore
     private List<Device> devices;
 }
 
