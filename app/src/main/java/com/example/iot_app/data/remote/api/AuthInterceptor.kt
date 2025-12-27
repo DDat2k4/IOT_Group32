@@ -6,18 +6,16 @@ import okhttp3.Interceptor
 import okhttp3.Response
 
 class AuthInterceptor(context: Context) : Interceptor {
-
-    private val tokenManager = TokenManager(context.applicationContext)
+    private val tokenManager = TokenManager(context)
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = tokenManager.getToken()
+        val token = tokenManager.getToken() // Lấy token từ SharedPreferences
+        val requestBuilder = chain.request().newBuilder()
 
-        val request = chain.request().newBuilder().apply {
-            if (!token.isNullOrEmpty()) {
-                addHeader("Authorization", "Bearer $token")
-            }
-        }.build()
+        if (!token.isNullOrEmpty()) {
+            requestBuilder.addHeader("Authorization", "Bearer $token") // Đính vào Header
+        }
 
-        return chain.proceed(request)
+        return chain.proceed(requestBuilder.build())
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.iot_app.data.remote.dto.RegisterRequest
 import com.example.iot_app.data.remote.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,21 @@ class AuthViewModel(
 
     private val _message = MutableLiveData<String>()
     val message: LiveData<String> = _message
+
+    fun register(request: RegisterRequest, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _loading.value = true
+            val result = repository.register(request)
+            _loading.value = false
+
+            result.onSuccess {
+                _message.value = it
+                onSuccess()
+            }.onFailure {
+                _message.value = it.message
+            }
+        }
+    }
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
@@ -59,4 +75,16 @@ class AuthViewModel(
             )
         }
     }
+
+    fun logout(onDone: () -> Unit) {
+        viewModelScope.launch {
+            repository.logout() // Trong repo này phải gọi tokenManager.clear()
+            onDone()
+        }
+    }
+
+    fun clearMessage() {
+        _message.value = null
+    }
+
 }

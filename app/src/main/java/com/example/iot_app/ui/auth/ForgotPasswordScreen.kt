@@ -22,20 +22,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.TextButton
 
 @Composable
 fun ForgotPasswordScreen(
     viewModel: AuthViewModel,
-    onOtpSent: () -> Unit
+    onOtpSent: (String) -> Unit,
+    onBack: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     val message by viewModel.message.observeAsState()
 
     LaunchedEffect(message) {
         if (message == "Đã gửi OTP về email") {
-            onOtpSent()
+          //  viewModel.clearMessage() //QUAN TRỌNG xóa mess
+            onOtpSent(email)
         }
     }
+
 
     Column(
         modifier = Modifier
@@ -61,6 +65,10 @@ fun ForgotPasswordScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Gửi OTP")
+        }
+
+        TextButton(onClick = onBack) {
+            Text("Quay lại đăng nhập")
         }
 
         message?.let {

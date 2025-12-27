@@ -10,23 +10,21 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.iot_app.data.local.TokenManager
 import com.example.iot_app.data.remote.api.RetrofitClient
 import com.example.iot_app.data.remote.repository.AuthRepository
+import com.example.iot_app.data.remote.repository.UserRepository
 import com.example.iot_app.navigation.AppNavGraph
 import com.example.iot_app.ui.auth.AuthViewModel
+import com.example.iot_app.ui.user.UserViewModel
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1️⃣ TokenManager
+        // Trong onCreate
+        val api = RetrofitClient.getInstance(applicationContext)
         val tokenManager = TokenManager(applicationContext)
-
-        // 2️⃣ ApiService (đã gắn AuthInterceptor)
-        val api = RetrofitClient.create(applicationContext)
-
-        // 3️⃣ Repository (ĐÚNG constructor)
         val repo = AuthRepository(api, tokenManager)
-
+        val userRepo = UserRepository(api)
         setContent {
 
             val authViewModel: AuthViewModel = viewModel(
@@ -37,8 +35,14 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
+            val userViewModel: UserViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer { UserViewModel(userRepo) }
+                }
+            )
+
             MaterialTheme {
-                AppNavGraph(authViewModel)
+                AppNavGraph(authViewModel, userViewModel)
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.example.iot_app.ui.dashboard
+package com.example.iot_app.ui.main
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
