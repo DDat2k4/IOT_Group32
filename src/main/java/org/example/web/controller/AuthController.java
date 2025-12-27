@@ -2,12 +2,18 @@ package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.web.data.entity.UserAccount;
+import org.example.web.data.pojo.UserAccountDTO;
 import org.example.web.data.response.AuthResponse;
 import org.example.web.data.request.*;
+import org.example.web.repository.UserAccountRepository;
 import org.example.web.service.AuthService;
 import org.example.web.data.response.ApiResponse;
+import org.example.web.service.UserAccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserAccountService userAccountService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
@@ -63,20 +70,27 @@ public class AuthController {
     }
 
     @PostMapping("/logout-all")
-    public ResponseEntity<ApiResponse<Void>> logoutAll(@RequestBody ChangePasswordRequest request) {
-        authService.logoutAll(request.getUserId());
+    public ResponseEntity<ApiResponse<Void>> logoutAll(@RequestBody ChangePasswordRequest request,
+                                                       @AuthenticationPrincipal UserDetails userDetails) {
+        UserAccountDTO user = userAccountService.findByUsername(userDetails.getUsername());
+        authService.logoutAll(user.getId());
         return ResponseEntity.ok(ApiResponse.ok("All sessions cleared", null));
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest request) {
-        try {
-            authService.changePassword(request.getUserId(), request.getOldPassword(), request.getNewPassword());
-            return ResponseEntity.ok(ApiResponse.ok("Password changed successfully", null));
-        } catch (BadCredentialsException ex) {
-            log.warn("Change password failed for userId={}", request.getUserId());
-            return ResponseEntity.status(400).body(ApiResponse.error("Old password incorrect"));
-        }
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(
+                userDetails.getUsername(),
+                request.getOldPassword(),
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.ok("Password changed successfully", null)
+        );
     }
 
     @PostMapping("/forgot-password")

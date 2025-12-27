@@ -135,9 +135,9 @@ public class AuthService {
         log.info("All refresh tokens removed for userId={}", userId);
     }
 
-    public void changePassword(Long userId, String oldPassword, String newPassword) {
+    public void changePassword(String userName, String oldPassword, String newPassword) {
         UserAccount user = userAccountRepository
-                .findById(userId)
+                .findByUsername(userName)
                 .orElseThrow(() -> new BadCredentialsException("User not found"));
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
@@ -147,7 +147,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userAccountRepository.save(user);
 
-        logoutAll(userId); // revoke all sessions
+        logoutAll(user.getId());
         log.info("Password changed. Revoked all refresh tokens for user {}", user.getUsername());
     }
 
