@@ -72,7 +72,7 @@ public class AuthService {
         UserAccount user = UserAccount.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullname())
+                .fullName(request.getFullName())
                 .role("USER")
                 .email(request.getEmail())
                 .createdAt(LocalDateTime.now())
