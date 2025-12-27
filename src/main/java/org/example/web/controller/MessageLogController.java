@@ -3,6 +3,7 @@ package org.example.web.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.web.data.entity.MessageLog;
 import org.example.web.data.pojo.ChartPointDTO;
+import org.example.web.data.pojo.LatestValueDTO;
 import org.example.web.service.MessageLogService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -30,18 +31,15 @@ public class MessageLogController {
     }
 
     @GetMapping("/latest")
-    public ResponseEntity<MessageLog> getLatestByTopicAndSensorType(
+    public ResponseEntity<LatestValueDTO> getLatestValue(
             @RequestParam String topic,
             @RequestParam String sensorType
     ) {
-        MessageLog log =
-                messageLogService.getLatestByTopicAndSensorType(topic, sensorType);
+        LatestValueDTO dto = messageLogService.getLatestValueByTopicAndSensorType(topic, sensorType);
 
-        if (log == null) {
-            return ResponseEntity.notFound().build();
-        }
+        if (dto == null) return ResponseEntity.notFound().build();
 
-        return ResponseEntity.ok(log);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/chart")

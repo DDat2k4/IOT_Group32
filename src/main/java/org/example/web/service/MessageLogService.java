@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.example.web.data.entity.MessageLog;
 import org.example.web.data.pojo.ChartPointDTO;
+import org.example.web.data.pojo.LatestValueDTO;
 import org.example.web.repository.MessageLogRepository;
 import org.springframework.stereotype.Service;
 
@@ -89,6 +90,21 @@ public class MessageLogService {
                     log.getReceivedAt(),
                     node.get("value").asDouble()
             );
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public LatestValueDTO getLatestValueByTopicAndSensorType(String topic, String sensorType) {
+        MessageLog log = getLatestByTopicAndSensorType(topic, sensorType);
+
+        if (log == null) return null;
+
+        try {
+            JsonNode node = objectMapper.readTree(log.getPayload());
+            if (!node.has("value")) return null;
+
+            return new LatestValueDTO(node.get("value").asDouble(), log.getReceivedAt());
         } catch (Exception e) {
             return null;
         }
