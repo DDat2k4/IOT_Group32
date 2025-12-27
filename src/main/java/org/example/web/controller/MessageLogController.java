@@ -2,10 +2,13 @@ package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.web.data.entity.MessageLog;
+import org.example.web.data.pojo.ChartPointDTO;
 import org.example.web.service.MessageLogService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -25,4 +28,39 @@ public class MessageLogController {
         messageLogService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/latest")
+    public ResponseEntity<MessageLog> getLatestByTopicAndSensorType(
+            @RequestParam String topic,
+            @RequestParam String sensorType
+    ) {
+        MessageLog log =
+                messageLogService.getLatestByTopicAndSensorType(topic, sensorType);
+
+        if (log == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(log);
+    }
+
+    @GetMapping("/chart")
+    public ResponseEntity<List<ChartPointDTO>> getChartData(
+            @RequestParam String topic,
+            @RequestParam String sensorType,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime to,
+            @RequestParam(required = false) Integer limit
+    ) {
+        return ResponseEntity.ok(
+                messageLogService.getChartData(
+                        topic, sensorType, from, to, limit
+                )
+        );
+    }
+
 }
