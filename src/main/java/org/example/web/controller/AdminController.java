@@ -1,13 +1,21 @@
 package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.web.data.entity.Device;
 import org.example.web.data.entity.UserAccount;
 import org.example.web.data.pojo.UserAccountDTO;
+import org.example.web.data.response.DeviceResponse;
+import org.example.web.mapper.DeviceMapper;
+import org.example.web.security.CustomUserDetails;
+import org.example.web.service.DeviceService;
 import org.example.web.service.UserAccountService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController

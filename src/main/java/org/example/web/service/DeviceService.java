@@ -132,4 +132,31 @@ public class DeviceService {
 
         return deviceRepository.findAll(specification, pageable);
     }
+
+    public List<Device> findAll() {
+        return deviceRepository.findAll();
+    }
+
+    public Device findById(Long id) {
+        return deviceRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Device not found"));
+    }
+
+    @Transactional
+    public Device updateByAdmin(Long id, Device updated) {
+        Device device = findById(id);
+
+        device.setName(updated.getName());
+        device.setLocation(updated.getLocation());
+        device.setStatus(updated.getStatus());
+
+        return deviceRepository.save(device);
+    }
+
+    @Transactional
+    public void deleteByAdmin(Long id) {
+        Device device = findById(id);
+        deviceRepository.delete(device);
+    }
 }
