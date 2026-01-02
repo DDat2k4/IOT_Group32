@@ -54,9 +54,8 @@ public class MqttSSLConfig {
 
     @PostConstruct
     public void init() throws Exception {
-        // Clean up topic string
         if (topic != null) {
-            topic = topic.trim();                                            // loại bỏ space thừa
+            topic = topic.trim();
         }
         log.info("Subscribing to topic '{}'", topic);
         // Load CA file
@@ -83,8 +82,6 @@ public class MqttSSLConfig {
 
         client = new MqttClient(mqttServer, clientId, new MemoryPersistence());
         client.connect(options);
-        log.info("MQTT TLS Connected to EMQX!");
-
         // Subscribe topic
         log.info("Subscribing to topic '{}'", topic);
         log.info("Topic raw length={}, value=[{}]", topic.length(), topic);
@@ -117,15 +114,9 @@ public class MqttSSLConfig {
     }
 
     private void processPayload(Device device, String topic, String payload) {
-        log.error(">>> ENTER processPayload <<<");
-
         JSONObject obj = new JSONObject(payload);
-
         String sensorType = obj.optString("sensorType");
         Float value = obj.has("value") ? obj.getFloat("value") : null;
-
-        log.error(">>> RAW sensorType='{}' value={}", sensorType, value);
-
         if (sensorType == null || value == null) {
             log.warn("Invalid payload: {}", payload);
             return;
