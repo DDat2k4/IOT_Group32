@@ -4,18 +4,24 @@ package com.example.iot_app.data.remote.api
 import com.example.iot_app.data.remote.dto.ApiResponse
 import com.example.iot_app.data.remote.dto.AuthData
 import com.example.iot_app.data.remote.dto.ChangePasswordRequest
+import com.example.iot_app.data.remote.dto.DeviceDto
+import com.example.iot_app.data.remote.dto.DeviceRequest
 import com.example.iot_app.data.remote.dto.ForgotPasswordRequest
 import com.example.iot_app.data.remote.dto.LoginRequest
 import com.example.iot_app.data.remote.dto.LogoutRequest
 import com.example.iot_app.data.remote.dto.RegisterRequest
 import com.example.iot_app.data.remote.dto.ResetPasswordRequest
+import com.example.iot_app.data.remote.dto.SensorDto
+import com.example.iot_app.data.remote.dto.SensorRequest
 import com.example.iot_app.data.remote.dto.UpdateProfileRequest
 import com.example.iot_app.data.remote.dto.UserProfileDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Path
 
 interface ApiService {
     @POST("api/auth/register")
@@ -49,6 +55,29 @@ interface ApiService {
     suspend fun changePassword(
         @Body body: ChangePasswordRequest
     )
+
+    @GET("api/devices")
+    suspend fun getAllDevices(): List<DeviceDto>
+
+    @POST("api/devices")
+    suspend fun createDevice(@Body req: DeviceRequest): DeviceDto
+
+    @PUT("api/devices/{id}")
+    suspend fun updateDevice(@Path("id") id: Int, @Body req: DeviceRequest): DeviceDto
+
+    @DELETE("api/devices/{id}")
+    suspend fun deleteDevice(@Path("id") id: Int): retrofit2.Response<Unit>
+
+    // cảm biến
+    @GET("api/sensors/device/{deviceId}")
+    suspend fun getSensorsByDeviceId(@Path("deviceId") deviceId: Int): List<SensorDto>
+
+    @POST("api/sensors/device/{deviceId}")
+    suspend fun createSensor(@Path("deviceId") deviceId: Int, @Body req: SensorRequest): SensorDto
+
+    // API cập nhật ngưỡng sensor
+    @PUT("api/sensors/{id}")
+    suspend fun updateSensor(@Path("id") id: Int, @Body req: SensorRequest): SensorDto
 
 
 }

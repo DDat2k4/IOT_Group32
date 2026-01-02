@@ -6,6 +6,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.iot_app.ui.device.DeviceManagerScreen
+import com.example.iot_app.ui.device.DeviceViewModel
 import com.example.iot_app.ui.home.HomeScreen
 import com.example.iot_app.ui.user.ProfileScreen
 import com.example.iot_app.ui.user.ChangePasswordScreen
@@ -15,6 +17,7 @@ import com.example.iot_app.ui.user.UserViewModel
 fun MainNavGraph(
     navController: NavHostController,
     userViewModel: UserViewModel,
+    deviceViewModel: DeviceViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -26,7 +29,9 @@ fun MainNavGraph(
             HomeScreen(viewModel = userViewModel)
         }
         composable("dashboard") { DashboardScreen() }
-        composable("devices") { Text("Devices") }
+        composable("devices") {
+            DeviceManagerScreen(viewModel = deviceViewModel)
+        }
         composable("alerts") { Text("Alerts") }
 
         composable("profile") {

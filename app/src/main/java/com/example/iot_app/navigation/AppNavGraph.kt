@@ -5,12 +5,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.iot_app.ui.auth.*
+import com.example.iot_app.ui.device.DeviceViewModel
 import com.example.iot_app.ui.main.DashboardScreen
 import com.example.iot_app.ui.main.MainScreen
 import com.example.iot_app.ui.user.UserViewModel
 
 @Composable
-fun AppNavGraph(viewModel: AuthViewModel, userViewModel: UserViewModel) {
+fun AppNavGraph(viewModel: AuthViewModel, userViewModel: UserViewModel, deviceViewModel: DeviceViewModel) {
     val nav = rememberNavController()
 
     NavHost(
@@ -51,6 +52,7 @@ fun AppNavGraph(viewModel: AuthViewModel, userViewModel: UserViewModel) {
             MainScreen(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
+                deviceViewModel = deviceViewModel,
                 onLogout = {
                     nav.navigate("login") {
                         userViewModel.clearData()

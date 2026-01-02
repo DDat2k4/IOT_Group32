@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.example.iot_app.ui.auth.AuthViewModel
+import com.example.iot_app.ui.device.DeviceViewModel
 import com.example.iot_app.ui.user.UserViewModel
 import kotlinx.coroutines.launch
 
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     viewModel: AuthViewModel,
     userViewModel: UserViewModel,
+    deviceViewModel: DeviceViewModel,
     onLogout: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -63,6 +65,7 @@ fun MainScreen(
                 MainNavGraph(
                     navController = nav,
                     userViewModel = userViewModel,
+                    deviceViewModel = deviceViewModel,
                     modifier = Modifier.fillMaxSize()
                 )
             }
