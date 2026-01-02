@@ -12,7 +12,9 @@ public class AlertSocketDTO {
     private String sensorType;
     private String alertType;
     private String alertLevel;
+    private Float threshold;
+    private String deviceName;
+    private String sensorName;
     private Float value;
     private LocalDateTime createdAt;
 }
-

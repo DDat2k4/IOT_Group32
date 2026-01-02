@@ -187,16 +187,7 @@ public class MqttSSLConfig {
             // Chỉ gửi email khi MEDIUM hoặc HIGH
             if (isWarning) {
                 mailService.sendAlertEmail(user.getEmail(), alert);
-                AlertSocketDTO dto = AlertSocketDTO.builder()
-                        .deviceCode(device.getDeviceCode())
-                        .sensorType(sensor.getSensorType())
-                        .alertType(alertType)
-                        .alertLevel(alertLevel)
-                        .value(value)
-                        .createdAt(LocalDateTime.now())
-                        .build();
-
-                alertSocketPublisher.pushAlert(dto);
+                alertSocketPublisher.pushAlert(alert);
             }
         }
     }

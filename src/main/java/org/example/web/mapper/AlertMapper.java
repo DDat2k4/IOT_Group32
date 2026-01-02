@@ -18,7 +18,7 @@ public class AlertMapper {
         res.setSensorId(a.getSensor() != null ? a.getSensor().getId() : null);
 
         res.setMessage(a.getAlertType());
-        res.setLevel(a.getIsWarning() != null && a.getIsWarning() ? "WARNING" : "ALERT");
+        res.setLevel(a.getAlertLevel());
         res.setCreatedAt(a.getCreatedAt() != null ? a.getCreatedAt().toString() : null);
         return res;
     }
