@@ -73,4 +73,8 @@ public class SensorService {
         return sensorRepository.findByDeviceIdAndSensorType(deviceId, sensorType)
                 .orElse(null);
     }
+
+    public Sensor getOneByDeviceCode(String deviceCode) {
+        return sensorRepository.findTopByDeviceDeviceCodeOrderByIdAsc(deviceCode);
+    }
 }

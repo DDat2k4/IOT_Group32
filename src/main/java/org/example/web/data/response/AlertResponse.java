@@ -5,9 +5,11 @@ import lombok.Data;
 @Data
 public class AlertResponse {
     private Long id;
-    private Long deviceId;
-    private Long sensorId;
-    private String message;
+    private String deviceCode;
+    private String name;
+    private String sensorType;
+    private String sensorUnit;
+    private String AlertType;
     private String level;
     private String createdAt;
 }

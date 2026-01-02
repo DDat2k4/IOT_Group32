@@ -13,4 +13,6 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
     boolean existsByDeviceIdAndSensorType(Long deviceId, String sensorType);
     // Tìm sensor theo deviceId và sensorType
     Optional<Sensor> findByDeviceIdAndSensorType(Long deviceId, String sensorType);
+
+    Sensor findTopByDeviceDeviceCodeOrderByIdAsc(String deviceCode);
 }

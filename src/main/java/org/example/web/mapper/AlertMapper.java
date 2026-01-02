@@ -11,13 +11,12 @@ public class AlertMapper {
         AlertResponse res = new AlertResponse();
         res.setId(a.getId());
 
-        // Lấy deviceId từ object Device
-        res.setDeviceId(a.getDevice() != null ? a.getDevice().getId() : null);
-
-        // Lấy sensorId từ object Sensor
-        res.setSensorId(a.getSensor() != null ? a.getSensor().getId() : null);
-
-        res.setMessage(a.getAlertType());
+        // Lấy deviceCode từ object Device
+        res.setDeviceCode(a.getDevice() != null ? a.getDevice().getDeviceCode() : null);
+        res.setName(a.getDevice() != null ? a.getDevice().getName() : null);
+        res.setSensorType(a.getSensor() != null ? a.getSensor().getSensorType() : null);
+        res.setSensorUnit(a.getSensor() != null ? a.getSensor().getUnit() : null);
+        res.setAlertType(a.getAlertType());
         res.setLevel(a.getAlertLevel());
         res.setCreatedAt(a.getCreatedAt() != null ? a.getCreatedAt().toString() : null);
         return res;
