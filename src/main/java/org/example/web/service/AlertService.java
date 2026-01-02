@@ -29,6 +29,11 @@ public class AlertService {
                 .collect(Collectors.toList());
     }
 
+    public List<AlertResponse> getByUserId(Long userId) {
+        return alertRepo.findByUserId(userId).stream().map(mapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<AlertResponse> getBySensor(Long sensorId) {
         return alertRepo.findBySensorId(sensorId)
                 .stream().map(mapper::toResponse)

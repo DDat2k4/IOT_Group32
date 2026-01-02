@@ -27,6 +27,11 @@ public class AlertController {
         return ResponseEntity.ok(alertService.getByDevice(deviceId));
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<AlertResponse>> getByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(alertService.getByUserId(userId));
+    }
+
     // Lấy alert theo sensorId
     @GetMapping("/sensor/{sensorId}")
     public ResponseEntity<List<AlertResponse>> getBySensor(@PathVariable Long sensorId) {

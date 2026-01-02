@@ -10,5 +10,7 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByDeviceId(Long deviceId);
 
     List<Alert> findBySensorId(Long sensorId);
+
+    List<Alert> findByUserId(Long userId);
 }
 
