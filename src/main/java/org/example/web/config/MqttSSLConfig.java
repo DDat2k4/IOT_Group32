@@ -187,11 +187,10 @@ public class MqttSSLConfig {
                     .isWarning(isWarning)
                     .build();
 
-            logAlertAsync(alert);
-
             // Gửi email nếu MEDIUM/HIGH nhưng giới hạn 5 phút/lần
             if (isWarning) {
                 alertSocketPublisher.pushAlert(alert);
+                logAlertAsync(alert);
                 AlertEmailLog log = alertEmailLogRepository
                         .findByUserIdAndSensorId(user.getId(), sensor.getId())
                         .orElse(null);
