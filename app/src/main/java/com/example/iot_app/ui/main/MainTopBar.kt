@@ -21,7 +21,7 @@ fun MainTopBar(
     CenterAlignedTopAppBar( // CenterAligned để chữ ở giữa
         title = {
             Text(
-                text = "Màn hình chính",
+                text = "Fire Alert Group32",
                 style = MaterialTheme.typography.titleLarge
             )
         },

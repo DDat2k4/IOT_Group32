@@ -13,8 +13,10 @@ object RetrofitClient {
 
     fun getInstance(context: Context): ApiService {
         if (apiService == null) {
+            val tokenManager = TokenManager(context)
             val client = OkHttpClient.Builder()
                 .addInterceptor(AuthInterceptor(context)) // Dùng context để khởi tạo TokenManager bên trong
+                .authenticator(TokenAuthenticator(context, tokenManager))
                 .build()
 
             apiService = Retrofit.Builder()
