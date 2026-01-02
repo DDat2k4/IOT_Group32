@@ -6,6 +6,7 @@ import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.example.web.data.entity.*;
 import org.example.web.data.pojo.AlertSocketDTO;
+import org.example.web.repository.AlertEmailLogRepository;
 import org.example.web.service.*;
 import org.example.web.service.mail.MailService;
 import org.json.JSONObject;
@@ -51,6 +52,7 @@ public class MqttSSLConfig {
     private final MessageLogService messageLogService;
     private final MailService mailService;
     private final AlertSocketPublisher alertSocketPublisher;
+    private final AlertEmailLogRepository alertEmailLogRepository;
 
     @PostConstruct
     public void init() throws Exception {
@@ -167,6 +169,8 @@ public class MqttSSLConfig {
 
         // Gửi alert cho tất cả user của device
         List<UserAccount> users = deviceService.getUsersOfDevice(device.getId());
+        LocalDateTime now = LocalDateTime.now();
+
         for (UserAccount user : users) {
 
             Alert alert = Alert.builder()
@@ -179,19 +183,43 @@ public class MqttSSLConfig {
                     .threshold(maxValue)
                     .topic(topic)
                     .payload(payload)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(now)
                     .isWarning(isWarning)
                     .build();
+
             logAlertAsync(alert);
 
-            // Chỉ gửi email khi MEDIUM hoặc HIGH
+            alertSocketPublisher.pushAlert(alert);
+
+            // Gửi email nếu MEDIUM/HIGH nhưng giới hạn 5 phút/lần
             if (isWarning) {
-                mailService.sendAlertEmail(user.getEmail(), alert);
-                alertSocketPublisher.pushAlert(alert);
+                AlertEmailLog log = alertEmailLogRepository
+                        .findByUserIdAndSensorId(user.getId(), sensor.getId())
+                        .orElse(null);
+
+                boolean shouldSendEmail = false;
+
+                if (log == null) {
+                    // Chưa gửi email lần nào
+                    shouldSendEmail = true;
+                    log = new AlertEmailLog();
+                    log.setUserId(user.getId());
+                    log.setSensorId(sensor.getId());
+                } else if (log.getLastSent().plusMinutes(5).isBefore(now)) {
+                    // Đã đủ 5 phút kể từ lần gửi trước
+                    shouldSendEmail = true;
+                }
+
+                if (shouldSendEmail) {
+                    mailService.sendAlertEmail(user.getEmail(), alert);
+
+                    // Cập nhật thời gian gửi email
+                    log.setLastSent(now);
+                    alertEmailLogRepository.save(log);
+                }
             }
         }
     }
-
     @Async
     public void logAlertAsync(Alert alert) {
         alertService.logAlert(alert);

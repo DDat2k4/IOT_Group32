@@ -5,6 +5,7 @@ import org.example.web.data.entity.Alert;
 import org.example.web.data.response.AlertResponse;
 import org.example.web.mapper.AlertMapper;
 import org.example.web.repository.AlertRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,13 +25,18 @@ public class AlertService {
     }
 
     public List<AlertResponse> getByDevice(Long deviceId) {
-        return alertRepo.findByDeviceId(deviceId)
-                .stream().map(mapper::toResponse)
+        int limit = 50;
+        return alertRepo.findByDeviceIdOrderByCreatedAtDesc(deviceId, PageRequest.of(0, limit))
+                .stream()
+                .map(mapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     public List<AlertResponse> getByUserId(Long userId) {
-        return alertRepo.findByUserId(userId).stream().map(mapper::toResponse)
+        int limit = 50;
+        return alertRepo.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, limit))
+                .stream()
+                .map(mapper::toResponse)
                 .collect(Collectors.toList());
     }
 
