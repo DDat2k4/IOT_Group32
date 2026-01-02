@@ -1,7 +1,7 @@
 package org.example.web.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.web.data.entity.Alert;
+import org.example.web.data.pojo.AlertSocketDTO;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +11,7 @@ public class AlertSocketPublisher {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void pushAlert(Alert alert) {
+    public void pushAlert(AlertSocketDTO alert) {
         messagingTemplate.convertAndSend(
                 "/topic/alerts",
                 alert

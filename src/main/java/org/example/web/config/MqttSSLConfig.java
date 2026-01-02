@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.example.web.data.entity.*;
+import org.example.web.data.pojo.AlertSocketDTO;
 import org.example.web.service.*;
 import org.example.web.service.mail.MailService;
 import org.json.JSONObject;
@@ -195,7 +196,16 @@ public class MqttSSLConfig {
             // Chỉ gửi email khi MEDIUM hoặc HIGH
             if (isWarning) {
                 mailService.sendAlertEmail(user.getEmail(), alert);
-                alertSocketPublisher.pushAlert(alert);
+                AlertSocketDTO dto = AlertSocketDTO.builder()
+                        .deviceCode(device.getDeviceCode())
+                        .sensorType(sensor.getSensorType())
+                        .alertType(alertType)
+                        .alertLevel(alertLevel)
+                        .value(value)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                alertSocketPublisher.pushAlert(dto);
             }
         }
     }
