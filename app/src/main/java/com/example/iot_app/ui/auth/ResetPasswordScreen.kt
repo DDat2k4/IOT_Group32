@@ -32,8 +32,8 @@ fun ResetPasswordScreen(
     val loading by viewModel.loading.observeAsState(false)
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // --- Logic Validation ---
-    val isOtpError = otp.isNotEmpty() && otp.length < 4 // Giả sử OTP cần ít nhất 4 ký tự
+    // -validation
+    val isOtpError = otp.isNotEmpty() && otp.length < 4 //OTP cần ít nhất 4 ký tự
     val isPasswordError = newPassword.isNotEmpty() && newPassword.length < 6
     val isFormValid = otp.isNotEmpty() && newPassword.length >= 6 && !isOtpError && !isPasswordError
 
@@ -82,7 +82,7 @@ fun ResetPasswordScreen(
                 singleLine = true
             )
 
-            // Tăng khoảng cách để có chỗ cho supportingText (20dp)
+            // Tăng khoảng cách để có chỗ cho supportingText
             Spacer(Modifier.height(20.dp))
 
             // Ô nhập Mật khẩu mới

@@ -78,7 +78,7 @@ class AuthViewModel(
 
     fun logout(onDone: () -> Unit) {
         viewModelScope.launch {
-            repository.logout() // Trong repo này phải gọi tokenManager.clear()
+            repository.logout()
             onDone()
         }
     }

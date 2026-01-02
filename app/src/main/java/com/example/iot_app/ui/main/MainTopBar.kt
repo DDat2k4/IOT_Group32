@@ -18,7 +18,7 @@ fun MainTopBar(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    CenterAlignedTopAppBar( // Sử dụng CenterAligned để chữ ở giữa
+    CenterAlignedTopAppBar( // CenterAligned để chữ ở giữa
         title = {
             Text(
                 text = "Màn hình chính",
@@ -35,7 +35,7 @@ fun MainTopBar(
                 IconButton(onClick = { showMenu = true }) {
                     Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
                 }
-                // Menu thả xuống giống như hình bạn mong muốn
+                // Menu thả xuống
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false }
@@ -48,7 +48,7 @@ fun MainTopBar(
                         text = { Text("Đổi mật khẩu") },
                         onClick = { showMenu = false; onChangePassword() }
                     )
-                    HorizontalDivider() // Vạch kẻ ngang cho đẹp
+                    HorizontalDivider() // Vạch kẻ ngang
                     DropdownMenuItem(
                         text = { Text("Đăng xuất") },
                         onClick = { showMenu = false; onLogout() }

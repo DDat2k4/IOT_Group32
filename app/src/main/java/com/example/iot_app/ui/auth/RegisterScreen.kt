@@ -69,7 +69,7 @@ fun RegisterScreen(
             Text("Tạo tài khoản", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(32.dp))
 
-            // 1. Họ và tên
+            // Họ và tên
             OutlinedTextField(
                 value = fullName,
                 onValueChange = { fullName = it },
@@ -82,7 +82,7 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(8.dp))
 
-            // 2. Tên đăng nhập
+            // Tên đăng nhập
             OutlinedTextField(
                 value = username, onValueChange = { username = it },
                 label = { Text("Tên đăng nhập") }, modifier = Modifier.fillMaxWidth(),
@@ -94,7 +94,7 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(8.dp))
 
-            // 3. Email
+            // Email
             OutlinedTextField(
                 value = email, onValueChange = { email = it },
                 label = { Text("Email") }, modifier = Modifier.fillMaxWidth(),
@@ -106,7 +106,7 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(8.dp))
 
-            // 4. Mật khẩu
+            // Mật khẩu
             OutlinedTextField(
                 value = password, onValueChange = { password = it },
                 label = { Text("Mật khẩu") }, modifier = Modifier.fillMaxWidth(),
@@ -124,7 +124,7 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(8.dp))
 
-            // 5. Xác nhận mật khẩu
+            //Xác nhận mật khẩu
             OutlinedTextField(
                 value = confirmPassword, onValueChange = { confirmPassword = it },
                 label = { Text("Xác nhận mật khẩu") }, modifier = Modifier.fillMaxWidth(),

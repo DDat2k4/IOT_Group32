@@ -14,7 +14,7 @@ import com.example.iot_app.ui.user.UserViewModel
 @Composable
 fun MainNavGraph(
     navController: NavHostController,
-    userViewModel: UserViewModel, // THÊM THAM SỐ NÀY
+    userViewModel: UserViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -22,12 +22,13 @@ fun MainNavGraph(
         startDestination = "home",
         modifier = modifier
     ) {
-        composable("home") { HomeScreen() }
+        composable("home") {
+            HomeScreen(viewModel = userViewModel)
+        }
         composable("dashboard") { DashboardScreen() }
         composable("devices") { Text("Devices") }
         composable("alerts") { Text("Alerts") }
 
-        // TRUYỀN VIEWMODEL VÀO ĐÂY
         composable("profile") {
             ProfileScreen(viewModel = userViewModel)
         }

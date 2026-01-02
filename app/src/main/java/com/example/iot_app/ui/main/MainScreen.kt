@@ -42,7 +42,7 @@ fun MainScreen(
                     onMenuClick = { scope.launch { drawerState.open() } },
                     onProfile = {
                         nav.navigate("profile") {
-                            // popUpTo sử dụng ID của màn hình khởi đầu để tránh lỗi đỏ
+                            // popUpTo sử dụng ID của màn hình khởi đầu
                             popUpTo(nav.graph.startDestinationId) { saveState = true }
                             launchSingleTop = true
                             restoreState = true

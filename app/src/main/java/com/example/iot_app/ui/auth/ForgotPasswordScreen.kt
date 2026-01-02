@@ -35,7 +35,7 @@ fun ForgotPasswordScreen(
 
     LaunchedEffect(message) {
         if (message == "Đã gửi OTP về email") {
-          //  viewModel.clearMessage() //QUAN TRỌNG xóa mess
+          //  viewModel.clearMessage()
             onOtpSent(email)
         }
     }

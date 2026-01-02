@@ -16,13 +16,13 @@ import androidx.compose.ui.unit.dp
 fun DrawerContent(
     onItemClick: (String) -> Unit
 ) {
-    // 1. ModalDrawerSheet tạo nền trắng/xám nhẹ, bo góc phải và đổ bóng chuẩn
+    // ModalDrawerSheet tạo nền trắng/xám nhẹ, bo góc phải và đổ bóng
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp) // Giới hạn độ rộng của menu
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 2. Tiêu đề menu cho đẹp
+        // Tiêu đề menu
         Text(
             text = "Ứng dụng IoT",
             modifier = Modifier.padding(horizontal = 28.dp, vertical = 16.dp),
@@ -34,7 +34,7 @@ fun DrawerContent(
         HorizontalDivider(modifier = Modifier.padding(horizontal = 28.dp)) // Vạch kẻ ngang
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 3. Sử dụng NavigationDrawerItem để có icon và hiệu ứng highlight khi bấm
+        // Sử dụng NavigationDrawerItem để có icon và hiệu ứng highlight khi bấm
         NavigationDrawerItem(
             label = { Text("Trang chủ") },
             selected = false,

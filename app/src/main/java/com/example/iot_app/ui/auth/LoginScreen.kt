@@ -33,7 +33,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // --- CÁC ĐIỀU KIỆN KIỂM TRA (VALIDATION) ---
+    // validation
     val isUsernameError = username.isNotEmpty() && username.length < 3
     val isPasswordError = password.isNotEmpty() && password.length < 6
     val isFormValid = username.isNotEmpty() && password.isNotEmpty() && !isUsernameError && !isPasswordError

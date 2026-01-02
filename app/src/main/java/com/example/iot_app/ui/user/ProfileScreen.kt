@@ -28,7 +28,7 @@ fun ProfileScreen(viewModel: UserViewModel) {
     var tempFullName by remember(profile) { mutableStateOf(profile?.fullName ?: "") }
     var tempEmail by remember(profile) { mutableStateOf(profile?.email ?: "") }
 
-    // CỰC KỲ QUAN TRỌNG: Cập nhật lại biến tạm khi profile thực sự có dữ liệu từ API
+    // Cập nhật lại biến tạm khi profile thực sự có dữ liệu từ API
     LaunchedEffect(profile) {
         profile?.let {
             tempFullName = it.fullName
@@ -54,7 +54,7 @@ fun ProfileScreen(viewModel: UserViewModel) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { padding ->
-            // Nếu chưa có bất kỳ dữ liệu nào (kể cả họ tên) thì hiện Loading
+            // Nếu chưa có bất kỳ dữ liệu nào thì hiện Loading
             if (profile == null) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
