@@ -50,7 +50,7 @@ public class MailService {
         sb.append("<p><strong>Value:</strong> ").append(alert.getValue()).append("</p>");
         sb.append("<p><strong>Threshold:</strong> ").append(alert.getThreshold()).append("</p>");
         sb.append("<p><strong>Alert Type:</strong> ").append(alert.getAlertType()).append("</p>");
-        sb.append("<p><strong>Status:</strong> ").append(warning ? "WARNING" : "NORMAL").append("</p>");
+        sb.append("<p><strong>Status Alert:</strong> ").append(alert.getAlertLevel()).append("</p>");
         sb.append("<p><strong>Time:</strong> ").append(formattedTime).append("</p>");
         return sb.toString();
     }

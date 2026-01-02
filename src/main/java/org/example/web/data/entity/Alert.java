@@ -33,6 +33,9 @@ public class Alert {
     @Column(length = 50)
     private String alertType;     // FIRE / SMOKE / GAS / TEMP_HIGH...
 
+    @Column(length = 20)
+    private String alertLevel;   // NORMAL | MEDIUM | HIGH
+
     private Float value;
 
     private Float threshold;

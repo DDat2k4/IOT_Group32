@@ -5,10 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.example.web.data.entity.*;
-import org.example.web.service.AlertService;
-import org.example.web.service.DeviceService;
-import org.example.web.service.MessageLogService;
-import org.example.web.service.SensorService;
+import org.example.web.service.*;
 import org.example.web.service.mail.MailService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -52,14 +49,13 @@ public class MqttSSLConfig {
     private final SensorService sensorService;
     private final MessageLogService messageLogService;
     private final MailService mailService;
+    private final AlertSocketPublisher alertSocketPublisher;
 
     @PostConstruct
     public void init() throws Exception {
         // Clean up topic string
         if (topic != null) {
-            topic = topic.replaceAll("^\"|\"$", "")    // loại bỏ dấu "
-                    .replaceAll("^'|'$", "")           // loại bỏ dấu '
-                    .trim();                                            // loại bỏ space thừa
+            topic = topic.trim();                                            // loại bỏ space thừa
         }
         log.info("Subscribing to topic '{}'", topic);
         // Load CA file
@@ -90,6 +86,7 @@ public class MqttSSLConfig {
 
         // Subscribe topic
         log.info("Subscribing to topic '{}'", topic);
+        log.info("Topic raw length={}, value=[{}]", topic.length(), topic);
         client.subscribe(topic, (t, msg) -> {
             String payload = new String(msg.getPayload());
             log.info("Received message from topic {}: {}", t, payload);
@@ -119,34 +116,75 @@ public class MqttSSLConfig {
     }
 
     private void processPayload(Device device, String topic, String payload) {
+        log.error(">>> ENTER processPayload <<<");
+
         JSONObject obj = new JSONObject(payload);
+
         String sensorType = obj.optString("sensorType");
         Float value = obj.has("value") ? obj.getFloat("value") : null;
+
+        log.error(">>> RAW sensorType='{}' value={}", sensorType, value);
 
         if (sensorType == null || value == null) {
             log.warn("Invalid payload: {}", payload);
             return;
         }
 
+        // Chuẩn hóa sensorType
+        sensorType = sensorType.toUpperCase();
+
         Sensor sensor = sensorService.findByDeviceAndType(device.getId(), sensorType);
-        Float threshold = sensor != null ? sensor.getMaxValue() : null;
-        boolean isWarning = threshold != null && value > threshold;
+        if (sensor == null || sensor.getMaxValue() == null) {
+            log.warn("Sensor or threshold not found for {}", sensorType);
+            return;
+        }
 
-        String alertType = sensorType;
-        if ("MQ2".equalsIgnoreCase(sensorType)) alertType = "GAS";
-        else if ("FLAME".equalsIgnoreCase(sensorType)) alertType = "FIRE";
-        else if ("DHT11".equalsIgnoreCase(sensorType) && threshold != null && value > threshold) alertType = "TEMP_HIGH";
+        Float maxValue = sensor.getMaxValue();
+        Float mediumThreshold = maxValue * 0.8f;
 
-        // gửi alert cho tất cả user của device
+        // Xác định mức cảnh báo
+        String alertLevel = "NORMAL";
+        boolean isWarning = false;
+
+        if (value > maxValue) {
+            alertLevel = "HIGH";
+            isWarning = true;
+        } else if (value >= mediumThreshold) {
+            alertLevel = "MEDIUM";
+            isWarning = true;
+        }
+
+        // Xác định loại cảnh báo
+        String alertType;
+        switch (sensorType) {
+            case "CO":
+                alertType = "Khí CO";
+                break;
+            case "MQ2":
+                alertType = "Khí Gas";
+                break;
+            case "FLAME":
+                alertType = "Lửa";
+                break;
+            case "TEMP":
+                alertType = "Nhiệt độ";
+                break;
+            default:
+                alertType = "UNKNOWN";
+        }
+
+        // Gửi alert cho tất cả user của device
         List<UserAccount> users = deviceService.getUsersOfDevice(device.getId());
         for (UserAccount user : users) {
+
             Alert alert = Alert.builder()
                     .device(device)
                     .sensor(sensor)
                     .user(user)
                     .alertType(alertType)
+                    .alertLevel(alertLevel)
                     .value(value)
-                    .threshold(threshold)
+                    .threshold(maxValue)
                     .topic(topic)
                     .payload(payload)
                     .createdAt(LocalDateTime.now())
@@ -154,9 +192,10 @@ public class MqttSSLConfig {
                     .build();
             logAlertAsync(alert);
 
-            // Chỉ gửi email nếu cảnh báo
+            // Chỉ gửi email khi MEDIUM hoặc HIGH
             if (isWarning) {
                 mailService.sendAlertEmail(user.getEmail(), alert);
+                alertSocketPublisher.pushAlert(alert);
             }
         }
     }
