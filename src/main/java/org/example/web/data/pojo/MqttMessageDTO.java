@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class MqttMessageDTO {
     private String topic;
-    private String payload;
+    private Object payload;
 }
 

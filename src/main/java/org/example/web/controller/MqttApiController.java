@@ -14,7 +14,7 @@ public class MqttApiController {
 
     @PostMapping("/send")
     public String sendMessage(@RequestBody MqttMessageDTO dto) throws Exception {
-        mqtt.publish(dto.getTopic(), dto.getPayload());
+        mqtt.publishpayload(dto.getTopic(), dto.getPayload());
         return "Message sent to topic: " + dto.getTopic();
     }
 }

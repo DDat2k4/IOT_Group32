@@ -1,5 +1,6 @@
 package org.example.web.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.paho.client.mqttv3.*;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.CertificateFactory;
 import java.time.LocalDateTime;
@@ -30,6 +32,7 @@ import java.util.List;
 public class MqttSSLConfig {
 
     private static final Logger log = LoggerFactory.getLogger(MqttSSLConfig.class);
+    private final ObjectMapper objectMapper;
 
     @Value("${mqtt.server}")
     private String mqttServer;
@@ -246,5 +249,17 @@ public class MqttSSLConfig {
         } else {
             throw new MqttException(new Throwable("MQTT client is not connected"));
         }
+    }
+
+    public void publishpayload(String topic, Object payload) throws Exception {
+
+        String jsonPayload = objectMapper.writeValueAsString(payload);
+
+        MqttMessage message =
+                new MqttMessage(jsonPayload.getBytes(StandardCharsets.UTF_8));
+        message.setQos(1);
+        message.setRetained(false);
+
+        client.publish(topic, message);
     }
 }

@@ -15,5 +15,3 @@ public class AlertResponse {
     private Double value;
     private Double threshold;
 }
-
-
