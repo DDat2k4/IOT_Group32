@@ -18,6 +18,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class DeviceService {
 
     private final DeviceRepository deviceRepository;
