@@ -12,5 +12,8 @@ public class AlertResponse {
     private String AlertType;
     private String level;
     private String createdAt;
+    private Double value;
+    private Double threshold;
 }
+
 

@@ -9,18 +9,37 @@ public class AlertMapper {
 
     public AlertResponse toResponse(Alert a) {
         AlertResponse res = new AlertResponse();
+
         res.setId(a.getId());
 
-        // Lấy deviceCode từ object Device
-        res.setDeviceCode(a.getDevice() != null ? a.getDevice().getDeviceCode() : null);
-        res.setName(a.getDevice() != null ? a.getDevice().getName() : null);
-        res.setSensorType(a.getSensor() != null ? a.getSensor().getSensorType() : null);
-        res.setSensorUnit(a.getSensor() != null ? a.getSensor().getUnit() : null);
+        res.setDeviceCode(
+                a.getDevice() != null ? a.getDevice().getDeviceCode() : null
+        );
+        res.setName(
+                a.getDevice() != null ? a.getDevice().getName() : null
+        );
+
+        res.setSensorType(
+                a.getSensor() != null ? a.getSensor().getSensorType() : null
+        );
+        res.setSensorUnit(
+                a.getSensor() != null ? a.getSensor().getUnit() : null
+        );
+
         res.setAlertType(a.getAlertType());
         res.setLevel(a.getAlertLevel());
-        res.setCreatedAt(a.getCreatedAt() != null ? a.getCreatedAt().toString() : null);
+
+        res.setValue(
+                a.getValue() != null ? a.getValue().doubleValue() : null
+        );
+        res.setThreshold(
+                a.getThreshold() != null ? a.getThreshold().doubleValue() : null
+        );
+
+        res.setCreatedAt(
+                a.getCreatedAt() != null ? a.getCreatedAt().toString() : null
+        );
+
         return res;
     }
 }
-
-
