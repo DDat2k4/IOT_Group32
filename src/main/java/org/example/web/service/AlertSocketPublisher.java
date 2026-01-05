@@ -13,10 +13,8 @@ public class AlertSocketPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
     public void pushAlert(Alert alert) {
-        // Lấy userId từ alert
         Long userId = alert.getUser().getId();
 
-        // Tạo DTO gửi cho frontend
         AlertSocketDTO dto = AlertSocketDTO.builder()
                 .alertType(alert.getAlertType())
                 .alertLevel(alert.getAlertLevel())
@@ -27,7 +25,6 @@ public class AlertSocketPublisher {
                 .createdAt(alert.getCreatedAt())
                 .build();
 
-        // Gửi riêng cho user
         messagingTemplate.convertAndSendToUser(
                 userId.toString(),
                 "/queue/alerts",

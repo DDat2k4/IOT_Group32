@@ -41,7 +41,6 @@ public class AuthService {
             throw new BadCredentialsException("Invalid username or password");
         }
 
-        // Clear old tokens
         logoutAll(user.getId());
 
         String accessToken = jwtService.generateToken(user.getId(), user.getUsername(), user.getRole());
@@ -59,7 +58,6 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
-        // Kiểm tra username đã tồn tại chưa
         if (userAccountRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new BadCredentialsException("Username already exists");
         }
@@ -68,7 +66,6 @@ public class AuthService {
             throw new BadCredentialsException("Email already exists");
         }
 
-        // Tạo user mới
         UserAccount user = UserAccount.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -79,8 +76,6 @@ public class AuthService {
                 .build();
 
         userAccountRepository.save(user);
-
-        // Tạo access + refresh token ngay sau khi đăng ký
         String accessToken = jwtService.generateToken(user.getId(), user.getUsername(), user.getRole());
         String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getUsername());
         saveRefreshToken(user, refreshToken);
@@ -198,17 +193,10 @@ public class AuthService {
         if (token.getExpireAt().isBefore(LocalDateTime.now())) {
             throw new BadCredentialsException("OTP expired");
         }
-
-        // Đổi mật khẩu
         user.setPassword(passwordEncoder.encode(newPassword));
         userAccountRepository.save(user);
-
-        // Xoá OTP sau khi dùng
         passwordResetTokenRepository.delete(token);
-
-        // Gửi email xác nhận
         mailService.sendPasswordChangedNotification(email);
-
         log.info("Password reset successful for {}", email);
     }
 }

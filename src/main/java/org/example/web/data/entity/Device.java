@@ -20,21 +20,19 @@ public class Device {
     private Long id;
 
     @Column(unique = true, nullable = false, length = 100)
-    private String deviceCode; // ESP32-001
+    private String deviceCode;
 
     private String name;
     private String location;
 
     @Column(length = 20)
-    private String status; // ACTIVE / INACTIVE / ERROR
+    private String status;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // 1 device → nhiều sensor
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Sensor> sensors = new ArrayList<>();
 
-    // Device nhiều user
     @ManyToMany
     @JoinTable(
             name = "device_user",

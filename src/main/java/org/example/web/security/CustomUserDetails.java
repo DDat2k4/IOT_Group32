@@ -32,16 +32,4 @@ public class CustomUserDetails implements UserDetails {
     public boolean isAdmin() {
         return hasRole("ADMIN");
     }
-//
-//    @Override
-//    public boolean isAccountNonExpired() { return active; }
-//
-//    @Override
-//    public boolean isAccountNonLocked() { return active; }
-//
-//    @Override
-//    public boolean isCredentialsNonExpired() { return active; }
-//
-//    @Override
-//    public boolean isEnabled() { return active; }
 }

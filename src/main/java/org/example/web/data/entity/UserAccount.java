@@ -32,7 +32,7 @@ public class UserAccount {
     private String email;
 
     @Column(length = 50)
-    private String role;       // ADMIN / USER
+    private String role;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();

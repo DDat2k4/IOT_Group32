@@ -24,7 +24,6 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final UserAccountRepository userAccountRepository;
 
-    // Save device và gán user hiện tại
     public Device save(Device device, Long userId) {
         UserAccount user = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));

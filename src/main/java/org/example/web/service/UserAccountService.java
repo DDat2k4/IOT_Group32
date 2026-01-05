@@ -108,7 +108,6 @@ public class UserAccountService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // ===== UPDATE CURRENT USER =====
     public UserAccountDTO updateInfo(Long id, UserInfo request) {
         UserAccount user = findEntityById(id);
 

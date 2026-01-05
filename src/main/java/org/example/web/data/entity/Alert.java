@@ -17,7 +17,6 @@ public class Alert {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // nhiều alert → 1 device
     @ManyToOne
     @JoinColumn(name = "device_id", nullable = false)
     private Device device;
@@ -31,10 +30,10 @@ public class Alert {
     private UserAccount user;
 
     @Column(length = 50)
-    private String alertType;     // FIRE / SMOKE / GAS / TEMP_HIGH...
+    private String alertType;
 
     @Column(length = 20)
-    private String alertLevel;   // NORMAL | MEDIUM | HIGH
+    private String alertLevel;
 
     private Float value;
 

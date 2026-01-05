@@ -20,11 +20,9 @@ public class JwtService {
 
     public JwtService(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
-        // Tạo SecretKey từ secret trong config
         this.secretKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
     }
 
-    // Tạo Access Token
     public String generateToken(Long userId, String username, String role) {
         return Jwts.builder()
                 .setSubject(username)
@@ -36,7 +34,6 @@ public class JwtService {
                 .compact();
     }
 
-    //Tạo Refresh Token
     public String generateRefreshToken(Long userId, String username) {
         return Jwts.builder()
                 .setSubject(username)

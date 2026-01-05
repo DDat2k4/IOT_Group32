@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class AlertService {
 
     private final AlertRepository alertRepo;
-    private final AlertMapper mapper; // map Alert → AlertResponse
+    private final AlertMapper mapper;
 
     public List<AlertResponse> getAll() {
         return alertRepo.findAll()
@@ -58,7 +58,6 @@ public class AlertService {
         return true;
     }
 
-    // Hàm ghi log alert (tự động gọi khi nhận MQTT hoặc vượt ngưỡng)
     public void logAlert(Alert alert) {
         alertRepo.save(alert);
     }
