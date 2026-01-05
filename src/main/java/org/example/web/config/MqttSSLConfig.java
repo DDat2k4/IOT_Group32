@@ -8,6 +8,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.example.web.data.entity.*;
 import org.example.web.data.pojo.AlertSocketDTO;
 import org.example.web.repository.AlertEmailLogRepository;
+import org.example.web.repository.DeviceRepository;
 import org.example.web.service.*;
 import org.example.web.service.mail.MailService;
 import org.json.JSONObject;
@@ -46,6 +47,8 @@ public class MqttSSLConfig {
     private String topic;
     @Value("${mqtt.ca-file}")
     private Resource caFile;
+    @Value("${mqtt.status-topic}")
+    private String statusTopic;
 
     private MqttClient client;
 
@@ -56,6 +59,7 @@ public class MqttSSLConfig {
     private final MailService mailService;
     private final AlertSocketPublisher alertSocketPublisher;
     private final AlertEmailLogRepository alertEmailLogRepository;
+    private final DeviceRepository deviceRepository;
 
     @PostConstruct
     public void init() throws Exception {
@@ -116,6 +120,7 @@ public class MqttSSLConfig {
                 log.error("Error processing MQTT message: {}", e.getMessage(), e);
             }
         });
+        client.subscribe(statusTopic, this::handleStatusMessage);
     }
 
     private void processPayload(Device device, String topic, String payload) {
@@ -261,5 +266,42 @@ public class MqttSSLConfig {
         message.setRetained(false);
 
         client.publish(topic, message);
+    }
+
+    private void handleStatusMessage(String topic, MqttMessage msg) {
+        try {
+            String payload = new String(msg.getPayload(), StandardCharsets.UTF_8);
+            log.info("Device status message [{}]: {}", topic, payload);
+            String[] parts = topic.split("/");
+            if (parts.length < 3) {
+                log.warn("Invalid status topic: {}", topic);
+                return;
+            }
+
+            String deviceCode = parts[2];
+
+            JSONObject obj = new JSONObject(payload);
+            String status = obj.optString("value");
+
+            if (!"ACTIVE".equalsIgnoreCase(status) &&
+                    !"INACTIVE".equalsIgnoreCase(status)) {
+                log.warn("Invalid device status: {}", status);
+                return;
+            }
+
+            Device device = deviceService.findByDeviceCode(deviceCode);
+            if (device == null) {
+                log.warn("Device not found for code {}", deviceCode);
+                return;
+            }
+
+            device.setStatus(status.toUpperCase());
+            deviceRepository.save(device);
+
+            log.info("Updated device {} status to {}", deviceCode, status);
+
+        } catch (Exception e) {
+            log.error("Error handling device status message", e);
+        }
     }
 }
