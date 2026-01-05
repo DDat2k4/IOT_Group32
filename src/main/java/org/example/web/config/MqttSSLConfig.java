@@ -272,13 +272,14 @@ public class MqttSSLConfig {
         try {
             String payload = new String(msg.getPayload(), StandardCharsets.UTF_8);
             log.info("Device status message [{}]: {}", topic, payload);
+
             String[] parts = topic.split("/");
-            if (parts.length < 3) {
+            if (parts.length < 4) {
                 log.warn("Invalid status topic: {}", topic);
                 return;
             }
 
-            String deviceCode = parts[2];
+            String deviceCode = parts[parts.length - 1];
 
             JSONObject obj = new JSONObject(payload);
             String status = obj.optString("value");
