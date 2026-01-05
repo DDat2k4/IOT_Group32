@@ -151,7 +151,7 @@ public class MqttSSLConfig {
         if (value >= maxValue) {
             alertLevel = "HIGH";
             isWarning = true;
-        } else if (value > mediumThreshold) {
+        } else if (value >= mediumThreshold) {
             alertLevel = "MEDIUM";
             isWarning = true;
         }
