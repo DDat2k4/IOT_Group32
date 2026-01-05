@@ -48,7 +48,8 @@ public class MailService {
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         StringBuilder sb = new StringBuilder();
         sb.append("<h3>Device Alert Notification</h3>");
-        sb.append("<p><strong>Device:</strong> ").append(alert.getDevice().getDeviceCode()).append("</p>");
+        sb.append("<p><strong>Room:</strong> ").append(alert.getDevice().getName()).append("</p>");
+        sb.append("<p><strong>Device code:</strong> ").append(alert.getDevice().getDeviceCode()).append("</p>");
         sb.append("<p><strong>Sensor:</strong> ").append(alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A").append("</p>");
         sb.append("<p><strong>Value:</strong> ").append(alert.getValue()+sensor.getUnit()).append("</p>");
         sb.append("<p><strong>Threshold:</strong> ").append(alert.getThreshold()+sensor.getUnit()).append("</p>");
