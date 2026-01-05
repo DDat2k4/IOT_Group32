@@ -9,6 +9,7 @@ import org.example.web.mapper.SensorMapper;
 import org.example.web.repository.DeviceRepository;
 import org.example.web.repository.SensorRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -76,5 +77,10 @@ public class SensorService {
 
     public Sensor getOneByDeviceCode(String deviceCode) {
         return sensorRepository.findTopByDeviceDeviceCodeOrderByIdAsc(deviceCode);
+    }
+
+    @Transactional
+    public void syncStatusWithDevice(Long deviceId, String status) {
+        sensorRepository.updateStatusByDeviceId(deviceId, status);
     }
 }

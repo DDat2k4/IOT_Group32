@@ -297,6 +297,7 @@ public class MqttSSLConfig {
             }
 
             device.setStatus(status.toUpperCase());
+            sensorService.syncStatusWithDevice(device.getId(), status.toUpperCase());
             deviceRepository.save(device);
 
             log.info("Updated device {} status to {}", deviceCode, status);
