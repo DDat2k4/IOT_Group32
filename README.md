@@ -1,4 +1,4 @@
-# 🔥 Hệ thống cảnh báo cháy sử dụng ESP32 + MQTT (TLS)
+# Hệ thống cảnh báo cháy sử dụng ESP32 + MQTT (TLS)
 
 ## 1. Tổng quan
 
