@@ -38,7 +38,7 @@ public class AdminDeviceController {
         Page<Device> page = deviceService.filter(
                 deviceCode, name, location, status, userId, pageable
         );
-        return ResponseEntity.ok(page.map(DeviceMapper::toResponse));
+        return ResponseEntity.ok(page.map(DeviceMapper::toResponseUser));
     }
 
     @GetMapping("/{id}")

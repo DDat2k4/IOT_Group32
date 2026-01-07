@@ -12,4 +12,5 @@ public class DeviceResponse {
     private String location;
     private String status;
     private List<SensorResponse> sensors;
+    private List<UserResponse> users;
 }

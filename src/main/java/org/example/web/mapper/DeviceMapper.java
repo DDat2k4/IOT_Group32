@@ -4,6 +4,7 @@ import org.example.web.data.entity.Device;
 import org.example.web.data.entity.Sensor;
 import org.example.web.data.response.DeviceResponse;
 import org.example.web.data.response.SensorResponse;
+import org.example.web.data.response.UserResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +28,43 @@ public class DeviceMapper {
 
         return res;
     }
+
+    public static DeviceResponse toResponseUser(Device device) {
+        DeviceResponse res = new DeviceResponse();
+        res.setId(device.getId());
+        res.setDeviceCode(device.getDeviceCode());
+        res.setName(device.getName());
+        res.setLocation(device.getLocation());
+        res.setStatus(device.getStatus());
+
+        // sensors
+        if (device.getSensors() != null) {
+            res.setSensors(
+                    device.getSensors().stream()
+                            .map(DeviceMapper::toSensorResponse)
+                            .toList()
+            );
+        }
+
+        // users
+        if (device.getUsers() != null) {
+            res.setUsers(
+                    device.getUsers().stream()
+                            .map(user -> {
+                                UserResponse u = new UserResponse();
+                                u.setId(user.getId());
+                                u.setUsername(user.getUsername());
+                                u.setFullName(user.getFullName());
+                                u.setEmail(user.getEmail());
+                                return u;
+                            })
+                            .toList()
+            );
+        }
+
+        return res;
+    }
+
 
     public static SensorResponse toSensorResponse(Sensor sensor) {
         SensorResponse res = new SensorResponse();
