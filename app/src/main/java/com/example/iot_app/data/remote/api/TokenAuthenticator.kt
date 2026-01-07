@@ -13,21 +13,36 @@ class TokenAuthenticator(
     private val tokenManager: TokenManager
 ) : Authenticator {
 
+    // xếp hàng luồng, k chạy song song để refresh token k lỗi
+    @Synchronized
     override fun authenticate(route: Route?, response: Response): Request? {
         if (response.code != 401) return null
 
-        // lấy Refresh Token từ bộ nhớ
-        val refreshToken = tokenManager.getRefreshToken()
-        if (refreshToken.isNullOrEmpty()) {
-            return null // Không có token để refreshddalog out
+        //lấy token đã lưu
+        val currentAccessToken = tokenManager.getToken()
+
+        // nếu token request khác token trong máy thì k cần refresh nữa vì có reqest đã yêu cầu token mới
+        val requestToken = response.request.header("Authorization")?.replace("Bearer ", "")
+
+        if (currentAccessToken != null && currentAccessToken != requestToken) {
+            return response.request.newBuilder()
+                .header("Authorization", "Bearer $currentAccessToken")
+                .build()
         }
 
-        // tránh lặp
+        // nếu giống thì refresh
+        val refreshToken = tokenManager.getRefreshToken()
+        if (refreshToken.isNullOrEmpty()) {
+            return null // k có refreshtoken thì logout
+        }
+
+        // Tránh lặp vô tận
         if (responseCount(response) >= 2) {
             return null
         }
 
         return try {
+            // Gọi API Refresh
             val apiService = RetrofitClient.getInstance(context)
             val refreshCall = apiService.refreshToken(RefreshTokenRequest(refreshToken))
             val refreshResponse = refreshCall.execute()
@@ -35,30 +50,28 @@ class TokenAuthenticator(
             if (refreshResponse.isSuccessful) {
                 val body = refreshResponse.body()
                 if (body != null && body.success) {
-                    // 5. Lưu token mới vào máy
+                    // Lưu token mới
                     val newAccessToken = body.data.accessToken
                     val newRefreshToken = body.data.refreshToken
                     tokenManager.saveTokens(newAccessToken, newRefreshToken)
 
-                    // tạo lại request cũ với header mới
+                    // Tạo lại request cũ với header mới
                     response.request.newBuilder()
                         .header("Authorization", "Bearer $newAccessToken")
                         .build()
                 } else {
-                    null // Server trả về lỗi logic
+                    null
                 }
             } else {
-                // Refresh token hết hạn hoặc không hợpthì  lệ óa data để user đăng nhập lại
+                // Refresh token hết hạn thì xóa data để user đăng nhập lại
                 tokenManager.clear()
                 null
             }
         } catch (e: Exception) {
-            // Lỗi mạng hoặc lỗi khác
             null
         }
     }
 
-    // Hàm đếm số lần retry để tránh lặp vô tận
     private fun responseCount(response: Response): Int {
         var result = 1
         var prior = response.priorResponse

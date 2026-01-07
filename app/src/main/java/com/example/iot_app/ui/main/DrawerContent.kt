@@ -9,11 +9,13 @@ import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun DrawerContent(
+    showDashboardBadge: Boolean, //chấm đỏ ở dashboard
     onItemClick: (String) -> Unit
 ) {
     // ModalDrawerSheet tạo nền trắng/xám nhẹ, bo góc phải và đổ bóng
@@ -48,7 +50,16 @@ fun DrawerContent(
             selected = false,
             onClick = { onItemClick("dashboard") },
             icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+
+            badge = {
+                if (showDashboardBadge) {
+                    // Dấu chấm than đỏ báo hiệu nguy hiểm
+                    Badge(containerColor = Color.Red, contentColor = Color.White) {
+                        Text("!")
+                    }
+                }
+            }
         )
 
         NavigationDrawerItem(
@@ -56,7 +67,7 @@ fun DrawerContent(
             selected = false,
             onClick = { onItemClick("devices") },
             icon = { Icon(Icons.Default.Devices, contentDescription = null) },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
         )
 
         NavigationDrawerItem(

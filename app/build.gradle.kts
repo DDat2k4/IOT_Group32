@@ -78,4 +78,14 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     implementation("androidx.compose.material:material-icons-extended")
+
+    // cho stomp
+    implementation ("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation ("io.reactivex.rxjava2:rxjava:2.2.21")
+    implementation ("io.reactivex.rxjava2:rxandroid:2.1.1")
+
+    // vẽ biểu đồ
+    implementation("com.patrykandpatrick.vico:compose-m3:1.12.0")
+
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 }

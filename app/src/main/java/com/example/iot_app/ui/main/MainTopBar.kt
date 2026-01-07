@@ -7,10 +7,13 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainTopBar(
+    hasNotification: Boolean, // kiểm tra có chấm đỏ cảnh báo/dashboard
     onMenuClick: () -> Unit,
     onProfile: () -> Unit,
     onChangePassword: () -> Unit,
@@ -26,8 +29,22 @@ fun MainTopBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onMenuClick) {
-                Icon(Icons.Default.Menu, contentDescription = "Menu")
+            BadgedBox(
+                badge = {
+                    if (hasNotification) {
+                        // Hiển thị Badge màu đỏ có dấu chấm than
+                        Badge(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        ) {
+                            Text("!", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            ) {
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                }
             }
         },
         actions = {

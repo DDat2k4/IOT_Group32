@@ -7,5 +7,5 @@ data class SensorRequest(
     val unit: String,
     val minValue: Double,
     val maxValue: Double,
-    val status: String = "ACTIVE"
+    val status: String = "ACTIVE" // mặc định tạo là ACTIVE
 )

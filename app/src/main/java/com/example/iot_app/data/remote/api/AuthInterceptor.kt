@@ -9,11 +9,21 @@ class AuthInterceptor(context: Context) : Interceptor {
     private val tokenManager = TokenManager(context)
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = tokenManager.getToken() // Lấy token từ SharedPreferences
-        val requestBuilder = chain.request().newBuilder()
+        val originalRequest = chain.request()
+        val requestUrl = originalRequest.url.toString()
+        // những api này thì k cần acesstoken
+        if (requestUrl.contains("/auth/login") ||
+            requestUrl.contains("/auth/register") ||
+            requestUrl.contains("/auth/refresh-token")) {
+            return chain.proceed(originalRequest)
+        }
+
+        // Các API khác thì gắn token bình thường
+        val token = tokenManager.getToken()
+        val requestBuilder = originalRequest.newBuilder()
 
         if (!token.isNullOrEmpty()) {
-            requestBuilder.addHeader("Authorization", "Bearer $token") // Đính vào Header
+            requestBuilder.addHeader("Authorization", "Bearer $token")
         }
 
         return chain.proceed(requestBuilder.build())

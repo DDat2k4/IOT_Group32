@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,9 +16,11 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun ProfileScreen(viewModel: UserViewModel) {
-    val profile by viewModel.profile.observeAsState()
-    val message by viewModel.message.observeAsState()
-    val isLoading by viewModel.loading.observeAsState(false)
+    // --- SỬA LỖI: Dùng collectAsState ---
+    val profile by viewModel.profile.collectAsState()
+    val message by viewModel.message.collectAsState()
+    val isLoading by viewModel.loading.collectAsState()
+    // ------------------------------------
 
     var isEditing by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -36,9 +37,8 @@ fun ProfileScreen(viewModel: UserViewModel) {
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadProfile()
-    }
+    // Đã xóa LaunchedEffect(Unit) { viewModel.loadProfile() }
+    // vì ViewModel mới có khối init {} tự load rồi.
 
     LaunchedEffect(message) {
         message?.let {

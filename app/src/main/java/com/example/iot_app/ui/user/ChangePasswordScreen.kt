@@ -7,7 +7,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,8 +24,11 @@ fun ChangePasswordScreen(viewModel: UserViewModel) {
     var oldPassVisible by remember { mutableStateOf(false) }
     var newPassVisible by remember { mutableStateOf(false) }
 
-    val message by viewModel.message.observeAsState()
-    val isLoading by viewModel.loading.observeAsState(false)
+    // --- SỬA LỖI: Dùng collectAsState thay vì observeAsState ---
+    val message by viewModel.message.collectAsState()
+    val isLoading by viewModel.loading.collectAsState()
+    // ---------------------------------------------------------
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Kiểm tra điều kiện nhập liệu
@@ -65,7 +67,6 @@ fun ChangePasswordScreen(viewModel: UserViewModel) {
                     singleLine = true
                 )
 
-                // Khoảng cách dành cho supportingText ẩn
                 Spacer(Modifier.height(24.dp))
 
                 OutlinedTextField(
@@ -88,7 +89,7 @@ fun ChangePasswordScreen(viewModel: UserViewModel) {
                 Button(
                     onClick = { viewModel.changePassword(oldPass, newPass) },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
-                    enabled = !isLoading && isFormValid, //
+                    enabled = !isLoading && isFormValid,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Cập nhật mật khẩu")

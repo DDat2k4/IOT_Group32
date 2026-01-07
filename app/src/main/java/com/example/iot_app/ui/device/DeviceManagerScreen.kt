@@ -36,6 +36,9 @@ fun DeviceManagerScreen(viewModel: DeviceViewModel) {
     var showDetailDialog by remember { mutableStateOf(false) }
     var selectedDeviceName by remember { mutableStateOf("") }
 
+    // Biến để lưu mã thiết bị đang chọn mqtt update
+    var selectedDeviceCode by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) { viewModel.loadDevices() }
 
     if (message != null) {
@@ -86,6 +89,10 @@ fun DeviceManagerScreen(viewModel: DeviceViewModel) {
                         device = device,
                         onView = {
                             selectedDeviceName = device.name
+
+                            // [MỚI] Lưu lại deviceCode khi nhấn nút Xem
+                            selectedDeviceCode = device.deviceCode
+
                             viewModel.loadSensorsForDevice(device.id)
                             showDetailDialog = true
                         },
@@ -98,7 +105,7 @@ fun DeviceManagerScreen(viewModel: DeviceViewModel) {
         }
     }
 
-    // dialog
+    // Dialog Thêm mới
     if (showAddDialog) {
         AddDeviceDialog(
             onDismiss = { showAddDialog = false },
@@ -109,6 +116,7 @@ fun DeviceManagerScreen(viewModel: DeviceViewModel) {
         )
     }
 
+    // Dialog Cập nhật
     if (deviceToEdit != null) {
         EditDeviceDialog(
             device = deviceToEdit!!,
@@ -120,12 +128,16 @@ fun DeviceManagerScreen(viewModel: DeviceViewModel) {
         )
     }
 
+    // Dialog Chi tiết Cảm biến
     if (showDetailDialog) {
         SensorDetailDialog(
             deviceName = selectedDeviceName,
             sensors = sensors,
             onDismiss = { showDetailDialog = false },
-            onUpdateThreshold = { sensor, newVal -> viewModel.updateThreshold(sensor, newVal) }
+            onUpdateThreshold = { sensor, newVal ->
+                // Truyền selectedDeviceCode vào hàm update của ViewModel
+                viewModel.updateThreshold(selectedDeviceCode, sensor, newVal)
+            }
         )
     }
 }
@@ -177,7 +189,6 @@ fun AddDeviceDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -
         onDismissRequest = onDismiss,
         title = { Text("Thêm thiết bị mới") },
         text = {
-            // Arrangement.spacedBy để cách đều
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = code, onValueChange = { code = it; isCodeError = false }, label = { Text("Mã thiết bị *") },
@@ -198,7 +209,6 @@ fun AddDeviceDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -
     )
 }
 
-// dialog ở cập nhật tb
 @Composable
 fun EditDeviceDialog(
     device: DeviceDto,
@@ -222,7 +232,6 @@ fun EditDeviceDialog(
         onDismissRequest = onDismiss,
         title = { Text("Cập nhật thiết bị") },
         text = {
-            //các ô cách đều nhau
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = code, onValueChange = {}, label = { Text("Mã thiết bị") },
@@ -295,7 +304,6 @@ fun SensorDetailDialog(
 @Composable
 fun SensorRow(sensor: SensorDto, onUpdate: (SensorDto, Double) -> Unit) {
     var showEditDialog by remember { mutableStateOf(false) }
-    // caajp nhật status từ b.e
     val statusColor = if (sensor.status == "ACTIVE") Color(0xFF4CAF50) else Color.Red
 
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {

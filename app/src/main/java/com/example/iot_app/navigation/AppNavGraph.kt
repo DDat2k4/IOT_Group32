@@ -4,19 +4,23 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.iot_app.ui.alert.AlertViewModel
 import com.example.iot_app.ui.auth.*
 import com.example.iot_app.ui.device.DeviceViewModel
-import com.example.iot_app.ui.main.DashboardScreen
 import com.example.iot_app.ui.main.MainScreen
 import com.example.iot_app.ui.user.UserViewModel
 
 @Composable
-fun AppNavGraph(viewModel: AuthViewModel, userViewModel: UserViewModel, deviceViewModel: DeviceViewModel) {
+fun AppNavGraph(viewModel: AuthViewModel,
+                userViewModel: UserViewModel,
+                deviceViewModel: DeviceViewModel,
+                alertViewModel: AlertViewModel,
+                startDestination: String) {
     val nav = rememberNavController()
 
     NavHost(
         navController = nav,
-        startDestination = "login"
+        startDestination = startDestination
     ) {
         // MÀN HÌNH ĐĂNG KÝ
         composable("register") {
@@ -53,6 +57,7 @@ fun AppNavGraph(viewModel: AuthViewModel, userViewModel: UserViewModel, deviceVi
                 viewModel = viewModel,
                 userViewModel = userViewModel,
                 deviceViewModel = deviceViewModel,
+                alertViewModel = alertViewModel,
                 onLogout = {
                     nav.navigate("login") {
                         userViewModel.clearData()
@@ -91,10 +96,6 @@ fun AppNavGraph(viewModel: AuthViewModel, userViewModel: UserViewModel, deviceVi
                     nav.popBackStack("login", inclusive = false)
                 }
             )
-        }
-
-        composable("dashboard") {
-            DashboardScreen()
         }
     }
 }

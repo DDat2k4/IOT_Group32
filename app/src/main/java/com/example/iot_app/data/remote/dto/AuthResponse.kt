@@ -1,6 +1,5 @@
 package com.example.iot_app.data.remote.dto
 
-// AuthResponse.kt
 data class ApiResponse<T>(
     val success: Boolean,
     val message: String,

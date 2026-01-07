@@ -17,7 +17,7 @@ class DeviceViewModel(private val repository: DeviceRepository) : ViewModel() {
     val devices = _devices.asStateFlow()
 
     private val _sensors = MutableStateFlow<List<SensorDto>>(emptyList())
-    val sensors = _sensors.asStateFlow() // ds sensor của thiết bị đang chọn
+    val sensors = _sensors.asStateFlow()
 
     private val _loading = MutableStateFlow(false)
     val loading = _loading.asStateFlow()
@@ -41,29 +41,27 @@ class DeviceViewModel(private val repository: DeviceRepository) : ViewModel() {
             repository.createDeviceWithSensors(code, name, location)
                 .onSuccess {
                     _message.value = "Thêm thiết bị & Sensors thành công!"
-                    loadDevices() // Load lại danh sách
+                    loadDevices()
                 }
                 .onFailure { _message.value = "Lỗi thêm: ${it.message}" }
             _loading.value = false
         }
     }
 
+    // Thêm logic gửi MQTT Status
     fun updateDevice(id: Int, code: String, name: String, location: String, status: String) {
         viewModelScope.launch {
             _loading.value = true
             try {
-                // cập nhật theiest bị
+                // Cập nhật vào Database trước
                 val deviceReq = DeviceRequest(code, name, location, status)
                 val deviceUpdateResult = repository.updateDevice(id, deviceReq)
 
                 if (deviceUpdateResult.isSuccess) {
-                    // lấy ds sensor đi cùng thiết bị đó
+                    // Đồng bộ trạng thái Sensors trong DB
                     val sensorsResult = repository.getSensors(id)
-
                     if (sensorsResult.isSuccess) {
                         val currentSensors = sensorsResult.getOrThrow()
-
-                        // duyệt qua sensor, lấy status theo device của các sensor đó
                         currentSensors.forEach { sensor ->
                             val sensorReq = SensorRequest(
                                 sensorType = sensor.sensorType,
@@ -71,13 +69,21 @@ class DeviceViewModel(private val repository: DeviceRepository) : ViewModel() {
                                 unit = sensor.unit,
                                 minValue = sensor.minValue,
                                 maxValue = sensor.maxValue,
-                                status = status // dựa theo divice
+                                status = status // Sensor theo status của Device
                             )
                             repository.updateSensor(sensor.id, sensorReq)
                         }
                     }
-                    _message.value = "Cập nhật thiết bị và đồng bộ cảm biến thành công!"
-                    loadDevices() // load lại UI
+
+                    // gửi lệnh MQTT cập nhật trạng thái
+                    val topic = "iot/status/$code"
+                    val payload = mapOf("value" to status)
+
+                    // Gọi hàm API
+                    repository.sendMqttCommand(topic, payload)
+
+                    _message.value = "Cập nhật thiết bị & Gửi lệnh MQTT thành công!"
+                    loadDevices()
                 } else {
                     _message.value = "Lỗi cập nhật thiết bị: ${deviceUpdateResult.exceptionOrNull()?.message}"
                 }
@@ -99,26 +105,40 @@ class DeviceViewModel(private val repository: DeviceRepository) : ViewModel() {
         }
     }
 
-    // xem thiết bị thì hàm này để lấy list sensor hiển thị lên
     fun loadSensorsForDevice(deviceId: Int) {
         viewModelScope.launch {
-            _sensors.value = emptyList() // Reset trước
+            _sensors.value = emptyList()
             repository.getSensors(deviceId)
                 .onSuccess { _sensors.value = it }
-                .onFailure { _message.value = "Không tải được sensor" }
+                .onFailure { error ->
+                    _message.value = "Lỗi tải sensor: ${error.message}"
+                    error.printStackTrace()
+                }
         }
     }
 
-    fun updateThreshold(sensor: SensorDto, newVal: Double) {
+    //thêm tham số deviceCode để gửi MQTT Threshold
+    fun updateThreshold(deviceCode: String, sensor: SensorDto, newVal: Double) {
         viewModelScope.launch {
+            // cập nhật vào Database
             repository.updateSensorThreshold(sensor, newVal)
-                .onSuccess {
-                    _message.value = "Đã cập nhật ngưỡng"
-                    // Load lại list sensor để UI cập nhật, update cục bộ
+                .onSuccess { updatedSensor ->
+
+                    // gửi mqtt
+                    val topic = "iot/threshold/$deviceCode"
+                    val payload = mapOf(
+                        "sensorType" to sensor.sensorType,
+                        "threshold" to newVal
+                    )
+                    repository.sendMqttCommand(topic, payload)
+
+                    _message.value = "Đã cập nhật ngưỡng & Gửi lệnh MQTT"
+
+                    //cập nhật UI cục bộ
                     val currentList = _sensors.value.toMutableList()
                     val index = currentList.indexOfFirst { it.id == sensor.id }
                     if (index != -1) {
-                        currentList[index] = it
+                        currentList[index] = updatedSensor
                         _sensors.value = currentList
                     }
                 }

@@ -1,5 +1,7 @@
 package com.example.iot_app
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,12 +11,14 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.iot_app.data.local.TokenManager
 import com.example.iot_app.data.remote.api.RetrofitClient
+import com.example.iot_app.data.remote.repository.AlertRepository
 import com.example.iot_app.data.remote.repository.AuthRepository
-import com.example.iot_app.data.remote.repository.DeviceRepository // Thêm import
+import com.example.iot_app.data.remote.repository.DeviceRepository
 import com.example.iot_app.data.remote.repository.UserRepository
 import com.example.iot_app.navigation.AppNavGraph
+import com.example.iot_app.ui.alert.AlertViewModel
 import com.example.iot_app.ui.auth.AuthViewModel
-import com.example.iot_app.ui.device.DeviceViewModel // Thêm import
+import com.example.iot_app.ui.device.DeviceViewModel
 import com.example.iot_app.ui.user.UserViewModel
 
 class MainActivity : ComponentActivity() {
@@ -22,13 +26,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val api = RetrofitClient.getInstance(applicationContext)
+        //  Kiểm tra Token và Quyền thông báo
         val tokenManager = TokenManager(applicationContext)
+        val savedToken = tokenManager.getToken()
 
-        // Khởi tạo các Repository
+        // Xác định màn hình bắt đầu login/main
+        val startDestination = if (!savedToken.isNullOrEmpty()) "main" else "login"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+        }
+
+        // Khởi tạo API, Repository
+        val api = RetrofitClient.getInstance(applicationContext)
         val authRepo = AuthRepository(api, tokenManager)
         val userRepo = UserRepository(api)
         val deviceRepo = DeviceRepository(api)
+        val alertRepo = AlertRepository(api)
 
         setContent {
             // Factory cho AuthViewModel
@@ -41,7 +55,9 @@ class MainActivity : ComponentActivity() {
             // Factory cho UserViewModel
             val userViewModel: UserViewModel = viewModel(
                 factory = viewModelFactory {
-                    initializer { UserViewModel(userRepo) }
+                    initializer {
+                        UserViewModel(userRepo, tokenManager)
+                    }
                 }
             )
 
@@ -52,9 +68,27 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
+            // Factory cho AlertViewModel
+            val alertViewModel: AlertViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        AlertViewModel(
+                            repository = alertRepo,
+                           // tokenManager = tokenManager,
+                            context = applicationContext
+                        )
+                    }
+                }
+            )
+
             MaterialTheme {
-                //Truyền deviceViewModel vào AppNavGraph
-                AppNavGraph(authViewModel, userViewModel, deviceViewModel)
+                AppNavGraph(
+                    viewModel = authViewModel,
+                    userViewModel = userViewModel,
+                    deviceViewModel = deviceViewModel,
+                    alertViewModel = alertViewModel,
+                    startDestination = startDestination
+                )
             }
         }
     }
