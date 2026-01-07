@@ -40,5 +40,9 @@ public class UserAccount {
     @ManyToMany(mappedBy = "users")
     @JsonIgnore
     private List<Device> devices;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<UserRefreshToken> refreshTokens;
 }
 

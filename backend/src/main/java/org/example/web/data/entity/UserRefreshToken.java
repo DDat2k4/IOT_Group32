@@ -18,22 +18,20 @@ public class UserRefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserAccount user;
 
     @Column(name = "refresh_token", nullable = false, length = 255)
     private String refreshToken;
 
-    @Column(name = "user_agent")
     private String userAgent;
 
-    @Column(name = "ip_address", length = 100)
+    @Column(length = 100)
     private String ipAddress;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
     @PrePersist
