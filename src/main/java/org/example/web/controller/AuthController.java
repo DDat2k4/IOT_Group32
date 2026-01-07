@@ -2,11 +2,9 @@ package org.example.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.web.data.entity.UserAccount;
 import org.example.web.data.pojo.UserAccountDTO;
 import org.example.web.data.response.AuthResponse;
 import org.example.web.data.request.*;
-import org.example.web.repository.UserAccountRepository;
 import org.example.web.service.AuthService;
 import org.example.web.data.response.ApiResponse;
 import org.example.web.service.UserAccountService;
@@ -73,7 +71,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logoutAll(@RequestBody ChangePasswordRequest request,
                                                        @AuthenticationPrincipal UserDetails userDetails) {
         UserAccountDTO user = userAccountService.findByUsername(userDetails.getUsername());
-        authService.logoutAll(user.getId());
+        authService.logoutAll(userAccountService.findEntityById(user.getId()));
         return ResponseEntity.ok(ApiResponse.ok("All sessions cleared", null));
     }
 

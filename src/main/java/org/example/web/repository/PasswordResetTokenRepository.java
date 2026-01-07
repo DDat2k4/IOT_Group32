@@ -1,6 +1,7 @@
 package org.example.web.repository;
 
 import org.example.web.data.entity.PasswordResetToken;
+import org.example.web.data.entity.UserAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -11,5 +12,5 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     void deleteByUserId(Long userId);
 
-    Optional<PasswordResetToken> findTopByUserIdOrderByExpireAtDesc(Long userId);
+    Optional<PasswordResetToken> findTopByUserOrderByExpireAtDesc(UserAccount user);
 }
