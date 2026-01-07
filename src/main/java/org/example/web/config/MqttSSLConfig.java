@@ -211,7 +211,7 @@ public class MqttSSLConfig {
                     log = new AlertEmailLog();
                     log.setUserId(user.getId());
                     log.setSensorId(sensor.getId());
-                } else if (log.getLastSent().plusMinutes(5).isBefore(now)) {
+                } else if (log.getLastSent().plusMinutes(1).isBefore(now)) {
                     // Đã đủ 5 phút kể từ lần gửi trước
                     shouldSendEmail = true;
                 }

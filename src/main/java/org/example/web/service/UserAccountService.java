@@ -134,4 +134,9 @@ public class UserAccountService {
     {
         userAccountRepository.delete(userAccount);
     }
+
+    public void deleteById(Long id)
+    {
+        userAccountRepository.deleteById(id);
+    }
 }

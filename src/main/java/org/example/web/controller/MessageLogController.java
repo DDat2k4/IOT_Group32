@@ -55,7 +55,7 @@ public class MessageLogController {
             @RequestParam(required = false) Integer limit
     ) {
         return ResponseEntity.ok(
-                messageLogService.getChartData(
+                messageLogService.getChartDataAvgPerMinute(
                         topic, sensorType, from, to, limit
                 )
         );

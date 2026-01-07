@@ -46,8 +46,9 @@ public class AdminController {
         return ResponseEntity.ok(userAccountService.update(Userid, userAccount));
     }
 
-    @DeleteMapping("/user/{Userid}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long Userid) {
-        return ResponseEntity.ok().build();
+    @DeleteMapping("/user/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+        userAccountService.deleteById(userId);
+        return ResponseEntity.noContent().build(); // HTTP 204
     }
 }

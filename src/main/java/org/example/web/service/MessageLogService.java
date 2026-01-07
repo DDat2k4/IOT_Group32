@@ -11,36 +11,42 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MessageLogService {
 
     private final MessageLogRepository repository;
-
     private final ObjectMapper objectMapper;
 
-    public MessageLog getLatestByTopicAndSensorType(
-            String topic,
-            String sensorType
-    ) {
-        List<MessageLog> logs =
-                repository.findByTopicOrderByReceivedAtDesc(topic);
-
-        return logs.stream()
-                .filter(log -> hasSensorType(log.getPayload(), sensorType))
-                .findFirst()
-                .orElse(null);
-    }
 
     private boolean hasSensorType(String payload, String sensorType) {
         try {
             JsonNode node = objectMapper.readTree(payload);
-            return sensorType.equals(node.get("sensorType").asText());
+            return node.has("sensorType")
+                    && sensorType.equals(node.get("sensorType").asText());
         } catch (Exception e) {
             return false;
         }
     }
+
+    private Double extractSensorValue(String payload) {
+        try {
+            JsonNode node = objectMapper.readTree(payload);
+            if (!node.has("value")) return null;
+            return node.get("value").asDouble();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private LocalDateTime truncateToMinute(LocalDateTime time) {
+        return time.withSecond(0).withNano(0);
+    }
+
 
     public MessageLog save(MessageLog log) {
         return repository.save(log);
@@ -54,6 +60,30 @@ public class MessageLogService {
         repository.deleteById(id);
     }
 
+    public MessageLog getLatestByTopicAndSensorType(
+            String topic,
+            String sensorType
+    ) {
+        return repository.findByTopicOrderByReceivedAtDesc(topic)
+                .stream()
+                .filter(log -> hasSensorType(log.getPayload(), sensorType))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public LatestValueDTO getLatestValueByTopicAndSensorType(
+            String topic,
+            String sensorType
+    ) {
+        MessageLog log = getLatestByTopicAndSensorType(topic, sensorType);
+        if (log == null) return null;
+
+        Double value = extractSensorValue(log.getPayload());
+        if (value == null) return null;
+
+        return new LatestValueDTO(value, log.getReceivedAt());
+    }
+
     public List<ChartPointDTO> getChartData(
             String topic,
             String sensorType,
@@ -61,52 +91,82 @@ public class MessageLogService {
             LocalDateTime to,
             Integer limit
     ) {
-        List<MessageLog> logs;
-
-        if (from != null && to != null) {
-            logs = repository
-                    .findByTopicAndReceivedAtBetweenOrderByReceivedAtAsc(
-                            topic, from, to
-                    );
-        } else {
-            logs = repository.findByTopicOrderByReceivedAtDesc(topic);
-        }
+        List<MessageLog> logs = (from != null && to != null)
+                ? repository.findByTopicAndReceivedAtBetweenOrderByReceivedAtAsc(topic, from, to)
+                : repository.findByTopicOrderByReceivedAtDesc(topic);
 
         return logs.stream()
                 .filter(log -> hasSensorType(log.getPayload(), sensorType))
                 .map(this::toChartPoint)
-                .filter(dto -> dto != null)
+                .filter(Objects::nonNull)
                 .limit(limit != null ? limit : Long.MAX_VALUE)
                 .toList();
     }
 
     private ChartPointDTO toChartPoint(MessageLog log) {
-        try {
-            JsonNode node = objectMapper.readTree(log.getPayload());
-
-            if (!node.has("value")) return null;
-
-            return new ChartPointDTO(
-                    log.getReceivedAt(),
-                    node.get("value").asDouble()
-            );
-        } catch (Exception e) {
-            return null;
-        }
+        Double value = extractSensorValue(log.getPayload());
+        if (value == null) return null;
+        return new ChartPointDTO(log.getReceivedAt(), value);
     }
 
-    public LatestValueDTO getLatestValueByTopicAndSensorType(String topic, String sensorType) {
-        MessageLog log = getLatestByTopicAndSensorType(topic, sensorType);
 
-        if (log == null) return null;
+    public List<ChartPointDTO> getChartDataAvgPerMinute(
+            String topic,
+            String sensorType,
+            LocalDateTime from,
+            LocalDateTime to,
+            Integer limit
+    ) {
+        boolean hasFromTo = (from != null && to != null);
 
-        try {
-            JsonNode node = objectMapper.readTree(log.getPayload());
-            if (!node.has("value")) return null;
-
-            return new LatestValueDTO(node.get("value").asDouble(), log.getReceivedAt());
-        } catch (Exception e) {
-            return null;
+        if (!hasFromTo && limit != null) {
+            return repository.findByTopicOrderByReceivedAtDesc(topic)
+                    .stream()
+                    .filter(log -> hasSensorType(log.getPayload(), sensorType))
+                    .map(this::toChartPoint)
+                    .filter(Objects::nonNull)
+                    .limit(limit)
+                    .sorted((a, b) -> a.getTime().compareTo(b.getTime()))
+                    .toList();
         }
+
+        if (!hasFromTo) {
+            to = LocalDateTime.now();
+            from = to.minusHours(1);
+        }
+
+        List<MessageLog> logs =
+                repository.findByTopicAndReceivedAtBetweenOrderByReceivedAtAsc(
+                        topic, from, to
+                );
+
+        return logs.stream()
+                .filter(log -> hasSensorType(log.getPayload(), sensorType))
+                .map(log -> {
+                    Double value = extractSensorValue(log.getPayload());
+                    if (value == null) return null;
+
+                    return Map.entry(
+                            truncateTo2Minutes(log.getReceivedAt()),
+                            value
+                    );
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.averagingDouble(Map.Entry::getValue)
+                ))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> new ChartPointDTO(e.getKey(), e.getValue()))
+                .toList();
     }
+
+    private LocalDateTime truncateTo2Minutes(LocalDateTime time) {
+        int minute = time.getMinute();
+        int truncatedMinute = (minute / 2) * 2;
+        return time.withMinute(truncatedMinute).withSecond(0).withNano(0);
+    }
+
 }

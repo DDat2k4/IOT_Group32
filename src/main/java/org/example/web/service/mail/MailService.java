@@ -50,7 +50,7 @@ public class MailService {
         sb.append("<h3>Device Alert Notification</h3>");
         sb.append("<p><strong>Room:</strong> ").append(alert.getDevice().getName()).append("</p>");
         sb.append("<p><strong>Device code:</strong> ").append(alert.getDevice().getDeviceCode()).append("</p>");
-        sb.append("<p><strong>Sensor:</strong> ").append(alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A").append("</p>");
+        sb.append("<p><strong>Sensor:</strong> ").append(alert.getSensor() != null ? sensor.getSensorType() : "N/A").append("</p>");
         sb.append("<p><strong>Value:</strong> ").append(alert.getValue()+sensor.getUnit()).append("</p>");
         sb.append("<p><strong>Threshold:</strong> ").append(alert.getThreshold()+sensor.getUnit()).append("</p>");
         sb.append("<p><strong>Alert Type:</strong> ").append(alert.getAlertType()).append("</p>");
