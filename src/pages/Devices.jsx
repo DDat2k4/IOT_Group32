@@ -29,6 +29,8 @@ export default function Devices() {
     fetchUsers();
   }, []);
 
+
+  
   // close dropdown when click outside
   useEffect(() => {
     const handleClickOutside = (e) => {

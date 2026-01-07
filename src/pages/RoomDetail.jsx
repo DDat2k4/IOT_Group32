@@ -19,7 +19,7 @@ const roomsData = {
       {
         name: "Thiết bị 202-B",
         status: "Offline",
-        sensors: [
+        sensors: [ 
           { name: "Gas", status: "Bình thường", threshold: "10 ppm" },
           { name: "CO", status: "Nguy hiểm", threshold: "30 ppm" },
         ],
@@ -27,6 +27,8 @@ const roomsData = {
     ],
   },
 };
+
+
 
 export default function RoomDetail({ params }) {
   const roomId = params.id; // lấy từ route /rooms/:id
