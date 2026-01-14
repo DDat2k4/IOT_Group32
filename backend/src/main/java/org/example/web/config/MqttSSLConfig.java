@@ -1,0 +1,309 @@
+package org.example.web.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.example.web.data.entity.*;
+import org.example.web.data.pojo.AlertSocketDTO;
+import org.example.web.repository.AlertEmailLogRepository;
+import org.example.web.repository.DeviceRepository;
+import org.example.web.service.*;
+import org.example.web.service.mail.MailService;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Component
+@RequiredArgsConstructor
+public class MqttSSLConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(MqttSSLConfig.class);
+    private final ObjectMapper objectMapper;
+
+    @Value("${mqtt.server}")
+    private String mqttServer;
+    @Value("${mqtt.username}")
+    private String username;
+    @Value("${mqtt.password}")
+    private String password;
+    @Value("${mqtt.client-id}")
+    private String clientId;
+    @Value("${mqtt.topic}")
+    private String topic;
+    @Value("${mqtt.ca-file}")
+    private Resource caFile;
+    @Value("${mqtt.status-topic}")
+    private String statusTopic;
+
+    private MqttClient client;
+
+    private final AlertService alertService;
+    private final DeviceService deviceService;
+    private final SensorService sensorService;
+    private final MessageLogService messageLogService;
+    private final MailService mailService;
+    private final AlertSocketPublisher alertSocketPublisher;
+    private final AlertEmailLogRepository alertEmailLogRepository;
+    private final DeviceRepository deviceRepository;
+
+    @PostConstruct
+    public void init() throws Exception {
+        if (topic != null) {
+            topic = topic.trim();
+        }
+        log.info("Subscribing to topic '{}'", topic);
+        // Load CA file
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        ks.load(null, null);
+        try (InputStream caInput = caFile.getInputStream()) {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            java.security.cert.Certificate ca = cf.generateCertificate(caInput);
+            ks.setCertificateEntry("caCert", ca);
+        }
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(ks);
+
+        SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+        sslContext.init(null, tmf.getTrustManagers(), null);
+
+        // MQTT connect
+        MqttConnectOptions options = new MqttConnectOptions();
+        options.setSocketFactory(sslContext.getSocketFactory());
+        options.setUserName(username);
+        options.setPassword(password.toCharArray());
+        options.setCleanSession(true);
+        options.setAutomaticReconnect(true);
+
+        client = new MqttClient(mqttServer, clientId, new MemoryPersistence());
+        client.connect(options);
+        // Subscribe topic
+        log.info("Subscribing to topic '{}'", topic);
+        log.info("Topic raw length={}, value=[{}]", topic.length(), topic);
+        client.subscribe(topic, (t, msg) -> {
+            String payload = new String(msg.getPayload());
+            log.info("Received message from topic {}: {}", t, payload);
+
+            saveMessageLog(t, payload);
+
+            try {
+                String[] parts = t.split("/");
+                String deviceCode = parts.length > 2 ? parts[2] : null;
+                if (deviceCode == null) {
+                    log.warn("Cannot parse deviceCode from topic: {}", t);
+                    return;
+                }
+
+                Device device = deviceService.findByDeviceCode(deviceCode);
+                if (device == null) {
+                    log.warn("Device not found for deviceCode {}", deviceCode);
+                    return;
+                }
+
+                processPayload(device, t, payload);
+
+            } catch (Exception e) {
+                log.error("Error processing MQTT message: {}", e.getMessage(), e);
+            }
+        });
+        client.subscribe(statusTopic, this::handleStatusMessage);
+    }
+
+    private void processPayload(Device device, String topic, String payload) {
+        JSONObject obj = new JSONObject(payload);
+        String sensorType = obj.optString("sensorType");
+        Float value = obj.has("value") ? obj.getFloat("value") : null;
+        if (sensorType == null || value == null) {
+            log.warn("Invalid payload: {}", payload);
+            return;
+        }
+
+        // Chuẩn hóa sensorType
+        sensorType = sensorType.toUpperCase();
+
+        Sensor sensor = sensorService.findByDeviceAndType(device.getId(), sensorType);
+        if (sensor == null || sensor.getMaxValue() == null) {
+            log.warn("Sensor or threshold not found for {}", sensorType);
+            return;
+        }
+
+        Float maxValue = sensor.getMaxValue();
+        Float mediumThreshold = maxValue * 0.8f;
+
+        // Xác định mức cảnh báo
+        String alertLevel = "NORMAL";
+        boolean isWarning = false;
+
+        if (value >= maxValue) {
+            alertLevel = "HIGH";
+            isWarning = true;
+        } else if (value >= mediumThreshold) {
+            alertLevel = "MEDIUM";
+            isWarning = true;
+        }
+
+        // Xác định loại cảnh báo
+        String alertType;
+        switch (sensorType) {
+            case "CO":
+                alertType = "Khí CO";
+                break;
+            case "MQ2":
+                alertType = "Khí Gas";
+                break;
+            case "FLAME":
+                alertType = "Lửa";
+                break;
+            case "TEMP":
+                alertType = "Nhiệt độ";
+                break;
+            default:
+                alertType = "UNKNOWN";
+        }
+
+        // Gửi alert cho tất cả user của device
+        List<UserAccount> users = deviceService.getUsersOfDevice(device.getId());
+        LocalDateTime now = LocalDateTime.now();
+
+        for (UserAccount user : users) {
+
+            Alert alert = Alert.builder()
+                    .device(device)
+                    .sensor(sensor)
+                    .user(user)
+                    .alertType(alertType)
+                    .alertLevel(alertLevel)
+                    .value(value)
+                    .threshold(maxValue)
+                    .topic(topic)
+                    .payload(payload)
+                    .createdAt(now)
+                    .isWarning(isWarning)
+                    .build();
+
+            // Gửi email nếu MEDIUM/HIGH nhưng giới hạn 5 phút/lần
+            if (isWarning) {
+                alertSocketPublisher.pushAlert(alert);
+                logAlertAsync(alert);
+                AlertEmailLog log = alertEmailLogRepository
+                        .findByUserIdAndSensorId(user.getId(), sensor.getId())
+                        .orElse(null);
+
+                boolean shouldSendEmail = false;
+
+                if (log == null) {
+                    // Chưa gửi email lần nào
+                    shouldSendEmail = true;
+                    log = new AlertEmailLog();
+                    log.setUserId(user.getId());
+                    log.setSensorId(sensor.getId());
+                } else if (log.getLastSent().plusMinutes(5).isBefore(now)) {
+                    // Đã đủ 5 phút kể từ lần gửi trước
+                    shouldSendEmail = true;
+                }
+
+                if (shouldSendEmail) {
+                    mailService.sendAlertEmail(user.getEmail(), alert);
+
+                    // Cập nhật thời gian gửi email
+                    log.setLastSent(now);
+                    alertEmailLogRepository.save(log);
+                }
+            }
+        }
+    }
+    @Async
+    public void logAlertAsync(Alert alert) {
+        alertService.logAlert(alert);
+        log.info("Alert saved for device {} sensor {} user {}",
+                alert.getDevice().getDeviceCode(),
+                alert.getSensor() != null ? alert.getSensor().getSensorType() : "N/A",
+                alert.getUser() != null ? alert.getUser().getUsername() : "N/A");
+    }
+
+    @Async
+    public void saveMessageLog(String topic, String payload) {
+        MessageLog logEntry = MessageLog.builder()
+                .topic(topic)
+                .payload(payload)
+                .receivedAt(LocalDateTime.now())
+                .build();
+        messageLogService.save(logEntry);
+    }
+
+    public void publish(String topic, String payload) throws MqttException {
+        if (client != null && client.isConnected()) {
+            MqttMessage message = new MqttMessage(payload.getBytes());
+            message.setQos(1);
+            client.publish(topic, message);
+            log.info("Published message to topic {}: {}", topic, payload);
+        } else {
+            throw new MqttException(new Throwable("MQTT client is not connected"));
+        }
+    }
+
+    public void publishpayload(String topic, Object payload) throws Exception {
+
+        String jsonPayload = objectMapper.writeValueAsString(payload);
+
+        MqttMessage message =
+                new MqttMessage(jsonPayload.getBytes(StandardCharsets.UTF_8));
+        message.setQos(1);
+        message.setRetained(false);
+
+        client.publish(topic, message);
+    }
+
+    private void handleStatusMessage(String topic, MqttMessage msg) {
+        try {
+            String payload = new String(msg.getPayload(), StandardCharsets.UTF_8);
+            log.info("Device status message [{}]: {}", topic, payload);
+
+            String[] parts = topic.split("/");
+            if (parts.length < 4) {
+                log.warn("Invalid status topic: {}", topic);
+                return;
+            }
+
+            String deviceCode = parts[parts.length - 1];
+
+            JSONObject obj = new JSONObject(payload);
+            String status = obj.optString("value");
+
+            if (!"ACTIVE".equalsIgnoreCase(status) &&
+                    !"INACTIVE".equalsIgnoreCase(status)) {
+                log.warn("Invalid device status: {}", status);
+                return;
+            }
+
+            Device device = deviceService.findByDeviceCode(deviceCode);
+            if (device == null) {
+                log.warn("Device not found for code {}", deviceCode);
+                return;
+            }
+
+            device.setStatus(status.toUpperCase());
+            sensorService.syncStatusWithDevice(device.getId(), status.toUpperCase());
+            deviceRepository.save(device);
+
+            log.info("Updated device {} status to {}", deviceCode, status);
+
+        } catch (Exception e) {
+            log.error("Error handling device status message", e);
+        }
+    }
+}
