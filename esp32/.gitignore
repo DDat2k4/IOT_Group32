@@ -3,3 +3,6 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Config file với thông tin nhạy cảm (WiFi password, MQTT credentials)
+include/config.h

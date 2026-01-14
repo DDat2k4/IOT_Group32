@@ -15,7 +15,54 @@ Thiết bị có thể bật/tắt từ xa, cấu hình ngưỡng cảnh báo qu
 
 ---
 
-## 2. Danh sách linh kiện
+## 2. Cấu hình WiFi và MQTT
+
+Hệ thống hỗ trợ **2 cách cấu hình WiFi**:
+
+### Cấu hình qua Web Portal
+
+1. **Upload code** lên ESP32 lần đầu
+2. ESP32 sẽ tự động tạo **WiFi Access Point** với tên: `ESP32-CONFIG-AP`
+3. Kết nối điện thoại/máy tính vào WiFi `ESP32-CONFIG-AP` (Password: `12345678`)
+4. Trình duyệt sẽ tự động mở, hoặc truy cập: `http://192.168.4.1`
+5. Nhập tên WiFi và mật khẩu của bạn
+6. Nhấn **Lưu & Khởi động lại**
+7. ESP32 sẽ tự động kết nối vào WiFi của bạn!
+
+**Xóa cấu hình WiFi đã lưu:**
+Nếu muốn cấu hình lại WiFi, uncomment dòng sau trong `setup()` và upload lại:
+
+```cpp
+// preferences.clear(); // Xóa cấu hình WiFi đã lưu
+```
+
+---
+
+#### 2.1. Bước 1: Tạo file cấu hình
+
+1. Mở file `include/config.h.example`
+2. **Tùy chọn A**: Sửa trực tiếp file `include/config.h`
+3. **Tùy chọn B**: Sao chép `config.h.example` thành `config.h` rồi chỉnh sửa
+
+#### 2.2. Bước 2: Điền thông tin WiFi
+
+Mở file `include/config.h` và thay đổi thông tin sau:
+
+```cpp
+// ---------- CẤU HÌNH WIFI ----------
+const char *WIFI_SSID = "TenWiFi_CuaBan";        // Thay bằng tên WiFi của bạn
+const char *WIFI_PASSWORD = "MatKhauWiFi_CuaBan"; // Thay bằng mật khẩu WiFi
+```
+
+#### 2.3. Lưu ý
+
+- File `config.h` chứa thông tin nhạy cảm (mật khẩu WiFi), **KHÔNG nên commit lên Git**
+- File `config.h.example` là template, có thể commit lên Git để người khác tham khảo
+- Sau khi chỉnh sửa `config.h`, cần **build và upload lại** code lên ESP32
+
+---
+
+## 3. Danh sách linh kiện
 
 | STT | Linh kiện                            |
 | --- | ------------------------------------ |
@@ -31,7 +78,7 @@ Thiết bị có thể bật/tắt từ xa, cấu hình ngưỡng cảnh báo qu
 
 ---
 
-## 3. Mapping chân ESP32 (theo code)
+## 4. Mapping chân ESP32 (theo code)
 
 | Thiết bị          | Chân ESP32  |
 | ----------------- | ----------- |
@@ -43,9 +90,9 @@ Thiết bị có thể bật/tắt từ xa, cấu hình ngưỡng cảnh báo qu
 
 ---
 
-## 4. Sơ đồ lắp mạch (Fritzing – dạng Markdown)
+## 5. Sơ đồ lắp mạch (Fritzing – dạng Markdown)
 
-### 4.1. DS18B20 – Cảm biến nhiệt độ
+### 5.1. DS18B20 – Cảm biến nhiệt độ
 
        DS18B20
      +-----------+
@@ -65,7 +112,7 @@ Thiết bị có thể bật/tắt từ xa, cấu hình ngưỡng cảnh báo qu
 
 ---
 
-### 4.2. Cảm biến khí MQ-2
+### 5.2. Cảm biến khí MQ-2
 
         MQ-2
     +------------+
@@ -80,7 +127,7 @@ Thiết bị có thể bật/tắt từ xa, cấu hình ngưỡng cảnh báo qu
 
 ---
 
-### 4.3. Cảm biến khí CO
+### 5.3. Cảm biến khí CO
 
        CO Sensor
     +---------------+
@@ -95,7 +142,7 @@ Thiết bị có thể bật/tắt từ xa, cấu hình ngưỡng cảnh báo qu
 
 ---
 
-### 4.4. Cảm biến Flame
+### 5.4. Cảm biến Flame
 
      Flame Sensor
      +---------------+
@@ -110,7 +157,7 @@ Thiết bị có thể bật/tắt từ xa, cấu hình ngưỡng cảnh báo qu
 
 ---
 
-### 4.5. Buzzer
+### 5.5. Buzzer
 
      Buzzer
      +----------+

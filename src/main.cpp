@@ -3,19 +3,72 @@
 #include <PubSubClient.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
-#include <Preferences.h>
-#include "config.h"  // File cấu hình WiFi và MQTT
-#include "WifiConfig.h"  // WiFi Config Portal
-
-// ---------- Sử dụng cấu hình từ file config.h ----------
-String mqttTopic = String(MQTT_TOPIC_FIRE);
-String mqttDeviceTopic = String(MQTT_TOPIC_DEVICE);
-String mqttConfigTopic = String(MQTT_TOPIC_CONFIG);
-String mqttThresholdTopic = String(MQTT_TOPIC_THRESHOLD);
-String mqttStatusTopic = String(MQTT_TOPIC_STATUS);
+// ---------- Cấu hình WiFi và MQTT ----------
+const char *ssid = "Kim Nguu T3";
+const char *password = "0978587654t3";
+// const char *mqttServer = "j6ce1b1c.ala.eu-central-1.emqxsl.com";
+const char *mqttServer = "ud221f2f.ala.asia-southeast1.emqxsl.com";
+const int mqttPort = 8883;
+// const char *mqttUser = "nkquoc";    // Nếu có
+// const char *mqttPass = "Soict2025"; 
+const char *mqttUser = "iotgroup32";    
+const char *mqttPass = "soict2025"; // Nếu có
+String mqttTopic = "iot/fire/";
+String mqttDeviceTopic = "iot/fire/device/";
+String mqttConfigTopic = "iot/fire/config/";
+String mqttThresholdTopic = "iot/threshold/";
+String mqttStatusTopic = "iot/status/";
 
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
+
+// ----- File CA cho MQTT -----
+// const char *ca_cert =
+//     "-----BEGIN CERTIFICATE-----\n"
+//     "MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh"
+//     "MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3"
+//     "d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH"
+//     "MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT"
+//     "MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j"
+//     "b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG"
+//     "9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI"
+//     "2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx"
+//     "1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ"
+//     "q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz"
+//     "tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ"
+//     "vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP"
+//     "BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV"
+//     "5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY"
+//     "1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4"
+//     "NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG"
+//     "Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91"
+//     "8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe"
+//     "pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl"
+//     "MrY="
+//     "-----END CERTIFICATE-----\n";
+const char *ca_cert =
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh"
+    "MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3"
+    "d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH"
+    "MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT"
+    "MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j"
+    "b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG"
+    "9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI"
+    "2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx"
+    "1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ"
+    "q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz"
+    "tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ"
+    "vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP"
+    "BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV"
+    "5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY"
+    "1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4"
+    "NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG"
+    "Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91"
+    "8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe"
+    "pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl"
+    "MrY="
+    "-----END CERTIFICATE-----\n";
 
 // ------ Cấu hình cảm biến ------
 // DS18B20
@@ -30,82 +83,32 @@ DallasTemperature sensors(&oneWire);
 #define BUZZER_PIN 23
 
 String deviceID = WiFi.macAddress();
-
-String topicTemp = mqttThresholdTopic + deviceID + "/TEMP";
-String topicMQ2 = mqttThresholdTopic + deviceID + "/MQ2";
-String topicCO = mqttThresholdTopic + deviceID + "/CO";
-String topicFlame = mqttThresholdTopic + deviceID  + "/FLAME";
-
 // Biến toàn cục để chia sẻ giữa các task
 float temperature;
 int mq2_val, co_val, flame_val;
 bool alert = false;
 int temp_threshold = 60;
-int mq2_threshold = 10000;
-int co_threshold = 10000;
+int mq2_threshold = 800;
+int co_threshold = 900;
 bool en_temp = true;
 bool en_mq2 = true;
 bool en_co = true;
 bool en_flame = true;
 bool deviceActive = true; // ACTIVE hoặc INACTIVE
-bool wifiConnected = false; // Trạng thái kết nối WiFi
-bool mqttConnected = false; // Trạng thái kết nối MQTT
+
 // ---------- Kết nối WiFi ----------
 void setupWiFi()
 {
-  Preferences preferences;
-  // Mở Preferences để kiểm tra cấu hình đã lưu
-  preferences.begin("wifi_config", true); // true = chỉ đọc
-  saved_ssid = preferences.getString("ssid", "");
-  saved_password = preferences.getString("pass", "");
-  preferences.end();
-  
-  // Nếu không có cấu hình đã lưu, thử dùng config.h
-  if (saved_ssid.length() == 0) {
-    Serial.println("Không tìm thấy cấu hình WiFi đã lưu.");
-    Serial.println("Khởi động WiFi Config Portal...");
-    Serial.println("Kết nối đến: ESP32-CONFIG-AP (Password: 12345678)");
-    Serial.println("Truy cập: http://192.168.4.1");
-    
-    startConfigPortal();
-    
-    // Sau khi cấu hình xong, sẽ tự động restart
-    // Code dưới đây sẽ không chạy nếu ở chế độ Config Portal
-    return;
-  }
-  
-  // Kết nối WiFi với thông tin đã lưu
-  Serial.print("Connecting to WiFi: ");
-  Serial.println(saved_ssid);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(saved_ssid.c_str(), saved_password.c_str());
-  
-  int timeout = 20; // 20 giây timeout
-  while (WiFi.status() != WL_CONNECTED && timeout > 0)
+  Serial.print("Connecting to WiFi");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
-    timeout--;
   }
-  
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi connected!");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("\nKết nối thất bại! Khởi động Config Portal...");
-    startConfigPortal();
-  }
+  Serial.println("\nWiFi connected");
 }
 
-// ---------- Xóa cấu hình WiFi đã lưu ----------
-void clearWiFiConfig() {
-  Preferences preferences;
-  preferences.begin("wifi_config", false); // false = read/write mode
-  preferences.clear(); // Xóa tất cả dữ liệu trong namespace
-  preferences.end();
-  Serial.println("WiFi configuration cleared!");
-}
 // ---------- Forward declarations ----------
 void parseThresholdMessage(String message);
 void parseStatusMessage(String message);
@@ -221,18 +224,11 @@ void parseConfigMessage(String message) {
 // ---------- Kết nối MQTT ----------
 void setupMQTT()
 {
-  espClient.setCACert(CA_CERTIFICATE);
-  espClient.setTimeout(3000); // Socket timeout 3 giây
-  client.setServer(MQTT_SERVER, MQTT_PORT);
+  espClient.setCACert(ca_cert);
+  client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
   
-  // Giảm Keep-Alive xuống 3 giây để phát hiện offline nhanh nhất (4-5s)
-  client.setKeepAlive(3);
-  
-  // Tăng buffer size để xử lý message nhanh hơn
-  client.setBufferSize(512);
-  
-  // Chuẩn bị Last Will and Testament (LWT) message với QoS 1
+  // Chuẩn bị Last Will and Testament (LWT) message
   String lwt_topic = "iot/device/status/" + deviceID;
   String lwt_message = "{\"device\":\"" + deviceID + "\",\"value\":\"INACTIVE\"}";
   
@@ -240,12 +236,11 @@ void setupMQTT()
   {
     Serial.println("Connecting to MQTT...");
     
-    // Kết nối với LWT: QoS 1 để đảm bảo LWT được gửi khi offline
-    if (client.connect(deviceID.c_str(), MQTT_USER, MQTT_PASSWORD, 
-                       lwt_topic.c_str(), 1, true, lwt_message.c_str()))
+    // Kết nối với LWT: client.connect(clientId, user, pass, willTopic, willQoS, willRetain, willMessage)
+    if (client.connect(deviceID.c_str(), mqttUser, mqttPass, 
+                       lwt_topic.c_str(), 0, true, lwt_message.c_str()))
     {
       Serial.println("connected");
-      mqttConnected = true;
       
       // Gửi message ONLINE ngay khi kết nối thành công
       String online_message = "{\"device\":\"" + deviceID + "\",\"value\":\"ACTIVE\"}";
@@ -256,14 +251,8 @@ void setupMQTT()
       client.subscribe(mqttConfigTopic.c_str());
       Serial.println("Subscribed to: " + mqttConfigTopic);
       
-      client.subscribe(topicTemp.c_str());
-      Serial.println("Subscribed to: " + topicTemp);
-      client.subscribe(topicMQ2.c_str());
-      Serial.println("Subscribed to: " + topicMQ2);
-      client.subscribe(topicCO.c_str());
-      Serial.println("Subscribed to: " + topicCO);
-      client.subscribe(topicFlame.c_str());
-      Serial.println("Subscribed to: " + topicFlame);
+      client.subscribe(mqttThresholdTopic.c_str());
+      Serial.println("Subscribed to: " + mqttThresholdTopic);
       
       client.subscribe(mqttStatusTopic.c_str());
       Serial.println("Subscribed to: " + mqttStatusTopic);
@@ -272,7 +261,6 @@ void setupMQTT()
     {
       Serial.print("failed, rc=");
       Serial.println(client.state());
-      mqttConnected = false;
       delay(2000);
     }
   }
@@ -295,51 +283,45 @@ void sensorTask(void *parameter)
               (en_mq2 && mq2_val > mq2_threshold) || 
               (en_co && co_val > co_threshold) || 
               (en_flame && flame_val == 1) );
+
+    Serial.print("Temp: ");
+    Serial.print(temperature);
+    Serial.print(" | Threshold: ");
+    Serial.print(temp_threshold);
+    Serial.print(" | MQ2: ");
+    Serial.print(mq2_val);
+    Serial.print(" | Threshold: ");
+    Serial.print(mq2_threshold);
+    Serial.print(" | CO: ");
+    Serial.print(co_val);
+    Serial.print(" | Threshold: ");
+    Serial.print(co_threshold);
+    Serial.print(" | Flame: ");
+    Serial.println(flame_val);
+
+
     
     // Gửi dữ liệu lên MQTT (chỉ khi device ACTIVE)
     if (client.connected() && deviceActive)
     {
       String basePayload = "{\"sensorType\":\"";
-      Serial.print("\nDevice: " + deviceID);
-      Serial.print(" - Wifi: " + saved_ssid);
-      Serial.print("\nPublishing data - ");
       if (en_temp) {
-        String msg = basePayload + "TEMP\",\"value\":" + String(temperature) + "}";
+        String msg = basePayload + "DS18B20\",\"value\":" + String(temperature) + "}";
         client.publish(mqttTopic.c_str(), msg.c_str());
-
-        Serial.print("Temp: ");
-        Serial.print(temperature);
-        Serial.print(" | Threshold: ");
-        Serial.print(temp_threshold);
       }
       if (en_mq2) {
         String msg = basePayload + "MQ2\",\"value\":" + String(mq2_val) + "}";
         client.publish(mqttTopic.c_str(), msg.c_str());
-
-        Serial.print(" | MQ2: ");
-        Serial.print(mq2_val);
-        Serial.print(" | Threshold: ");
-        Serial.print(mq2_threshold);
       }
 
       if (en_co) {
         String msg = basePayload + "CO\",\"value\":" + String(co_val) + "}";
         client.publish(mqttTopic.c_str(), msg.c_str());
-
-        Serial.print(" | CO: ");
-        Serial.print(co_val);
-        Serial.print(" | Threshold: ");
-        Serial.print(co_threshold);
-
       }
 
       if (en_flame) {
         String msg = basePayload + "FLAME\",\"value\":" + String(flame_val) + "}";
         client.publish(mqttTopic.c_str(), msg.c_str());
-
-        Serial.print(" | Flame: ");
-        Serial.print(flame_val);
-        Serial.println();
       }
       // Serial.println("Published sensor data separately");
     }
@@ -369,111 +351,29 @@ void alertTask(void *parameter)
     // vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
-
-// --- Task giám sát kết nối WiFi ---
-void wifiMonitorTask(void *parameter)
-{
-  for (;;)
-  {
-    // Kiểm tra trạng thái WiFi
-    if (WiFi.status() == WL_CONNECTED) {
-      if (!wifiConnected) {
-        wifiConnected = true;
-        Serial.println("[WiFi] Connected - IP: " + WiFi.localIP().toString());
-        
-        // Kết nối lại MQTT khi WiFi vừa khôi phục
-        if (!client.connected()) {
-          Serial.println("[WiFi] Reconnecting to MQTT...");
-
-          setupMQTT();
-        }
-      }
-    } else {
-      if (wifiConnected) {
-        wifiConnected = false;
-        Serial.println("[WiFi] Disconnected! Attempting to reconnect...");
-      }
-      
-      // Thử kết nối lại WiFi
-      WiFi.disconnect();
-      delay(100);
-      WiFi.begin(saved_ssid.c_str(), saved_password.c_str());
-      
-      // Chờ kết nối trong 10 giây
-      int timeout = 20;
-      while (WiFi.status() != WL_CONNECTED && timeout > 0) {
-        delay(500);
-        Serial.print(".");
-        timeout--;
-      }
-      
-      if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("\n[WiFi] Reconnected successfully!");
-      } else {
-        Serial.println("\n[WiFi] Reconnection failed. Will retry...");
-      }
-    }
-    
-    // Kiểm tra mỗi 1 giây
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-  }
-}
-
 void setup()
 {
   Serial.begin(115200);
-  delay(1000);
-  Serial.println("\n=== ESP32 Fire Warning System ===");
-  
-  deviceID = WiFi.macAddress();
   mqttTopic += deviceID;
   mqttConfigTopic += deviceID;
   mqttThresholdTopic += deviceID;
   mqttStatusTopic += deviceID;
-  
   sensors.begin();
   pinMode(FLAME_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
-  // Thiết lập WiFi (có thể chuyển sang Config Portal nếu chưa cấu hình)
   setupWiFi();
-  
-  // Chỉ tiếp tục nếu đã kết nối WiFi thành công
-  if (WiFi.status() == WL_CONNECTED) {
-    wifiConnected = true;
-    setupMQTT();
-    String payload = "Device " + deviceID + " connected.";
-    client.publish(mqttDeviceTopic.c_str(), payload.c_str());
-    
-    // Tạo task FreeRTOS
-    xTaskCreate(sensorTask, "SensorTask", 4096, NULL, 1, NULL);
-    xTaskCreate(alertTask, "AlertTask", 2048, NULL, 1, NULL);
-    xTaskCreate(wifiMonitorTask, "WiFiMonitorTask", 4096, NULL, 1, NULL);
-  } else {
-    Serial.println("WiFi chưa kết nối. Đang ở chế độ Config Portal.");
-  }
+  setupMQTT();
+  String payload = "Device " + deviceID + " connected.";
+  client.publish(mqttDeviceTopic.c_str(), payload.c_str());
+  // Tạo task FreeRTOS
+  xTaskCreate(sensorTask, "SensorTask", 4096, NULL, 1, NULL);
+  xTaskCreate(alertTask, "AlertTask", 2048, NULL, 1, NULL);
 }
 void loop()
 {
-  if (Serial.available()) {
-    String cmd = Serial.readStringUntil('\n');
-    if (cmd == "CLEAR_WIFI") {
-      clearWiFiConfig();
-      Serial.println("Restarting...");
-      ESP.restart();
-    }
-  }
-  // Nếu đang ở chế độ Config Portal (AP mode)
-  if (WiFi.getMode() == WIFI_AP) {
-    server.handleClient();
-    delay(10);
-    return;
-  }
-  
-  // Chế độ bình thường - kết nối MQTT
   if (!client.connected())
     setupMQTT();
-  client.loop(); // Giữ MQTT sống và gửi keep-alive
-  // Giảm delay để xử lý MQTT ping/pong nhanh hơn
-  vTaskDelay(5 / portTICK_PERIOD_MS);
+  client.loop(); // Giữ MQTT sống
+  vTaskDelay(10 / portTICK_PERIOD_MS);
 }
